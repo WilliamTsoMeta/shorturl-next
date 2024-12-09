@@ -1,43 +1,80 @@
 'use client'
 
 import { useState } from 'react'
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase'
 import Image from 'next/image'
 import Link from 'next/link'
 import { ThemeToggle } from '@/components/ThemeToggle'
+import { useRouter } from 'next/navigation'
 
 export default function Login() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [rememberMe, setRememberMe] = useState(false)
+  const [error, setError] = useState('')
+  const router = useRouter()
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
+    const client = createClient()
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await client.auth.signInWithPassword({
         email,
         password,
       })
-      if (error) throw error
-      // Redirect will be handled by middleware
+      
+      if (error) {
+        setError(error.message)
+        return
+      }
+      
+      if (data?.session) {
+        // 存储 session 到 localStorage
+        localStorage.setItem('sb-auth-token', JSON.stringify(data.session))
+        
+        // 设置 cookie
+        const secure = process.env.NODE_ENV === 'production' ? 'Secure;' : ''
+        document.cookie = `sb-access-token=${data.session.access_token}; path=/; ${secure} SameSite=Lax; max-age=${60 * 60 * 24}`
+        document.cookie = `sb-refresh-token=${data.session.refresh_token}; path=/; ${secure} SameSite=Lax; max-age=${60 * 60 * 24 * 7}`
+        
+        // 使用 router.push 而不是 window.location
+        router.push('/link_list')
+      }
     } catch (error) {
       console.error('Error logging in:', error)
+      setError('登录失败，请重试')
     }
   }
 
   const handleGoogleLogin = async () => {
+    const client = createClient()
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
+      const { error } = await client.auth.signInWithOAuth({
         provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/link_list`,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          }
+        }
       })
-      if (error) throw error
+      if (error) {
+        setError(error.message)
+      }
     } catch (error) {
       console.error('Error logging in with Google:', error)
+      setError('Google 登录失败，请重试')
     }
   }
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-4 bg-white dark:bg-gray-900">
+      {error && (
+        <div className="mb-4 p-4 bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-100 rounded-lg">
+          {error}
+        </div>
+      )}
       <div className="absolute top-4 right-4">
         <ThemeToggle />
       </div>
