@@ -10,15 +10,24 @@ export async function middleware(req: NextRequest) {
     data: { session },
   } = await supabase.auth.getSession()
 
-  // If user is signed in and the current path is /login or /signup, redirect to home page
-  if (session && (req.nextUrl.pathname === '/login' || req.nextUrl.pathname === '/signup')) {
+  // 如果用户已登录且访问登录页，重定向到首页
+  if (session && ['/login', '/signup'].includes(req.nextUrl.pathname)) {
     return NextResponse.redirect(new URL('/', req.url))
   }
 
-  // If user is not signed in and the current path is not /login or /signup, redirect to login page
-  if (!session && req.nextUrl.pathname !== '/login' && req.nextUrl.pathname !== '/signup') {
+  // 如果用户未登录且访问需要认证的页面，重定向到登录页
+  if (!session && 
+      !req.nextUrl.pathname.startsWith('/login') && 
+      !req.nextUrl.pathname.startsWith('/signup') &&
+      !req.nextUrl.pathname.startsWith('/_next') &&
+      !req.nextUrl.pathname.startsWith('/favicon.ico')
+  ) {
     return NextResponse.redirect(new URL('/login', req.url))
   }
 
   return res
+}
+
+export const config = {
+  matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
 }
