@@ -10,24 +10,10 @@ export async function middleware(req: NextRequest) {
   const supabase = createMiddlewareClient({ req, res })
 
   try {
-    // 检查当前路径
-    console.log('Current path:', req.nextUrl.pathname)
-    
-    // 检查所有 cookies
-    console.log('All cookies:', req.cookies.getAll())
-    
-    // 检查 localStorage (如果在浏览器环境)
-    if (typeof window !== 'undefined') {
-      console.log('LocalStorage:', localStorage.getItem('supabase.auth.token'))
-    }
+
 
     // 获取并检查会话
-    const { data: { session }, error } = await supabase.auth.getSession()
-    console.log('Session check result:', { session, error })
-
-    // 检查认证头部
-    const authHeader = req.headers.get('authorization')
-    console.log('Auth header:', authHeader)
+    const { data: { session } } = await supabase.auth.getSession()
 
     // 如果是公开路由，直接通过
     if (publicRoutes.includes(req.nextUrl.pathname)) {
