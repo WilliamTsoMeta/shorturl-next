@@ -19,25 +19,32 @@ export default function CreateLink() {
   const qrRef = useRef<HTMLDivElement>(null);
   const qrCode = useRef<QRCodeStyling>();
 
+  const [isQRModalOpen, setIsQRModalOpen] = useState(false);
+  const [qrOptions, setQrOptions] = useState({
+    dotsType: "dots",
+    dotsColor: "#000000",
+    backgroundColor: "#FFFFFF",
+  });
+
   useEffect(() => {
     qrCode.current = new QRCodeStyling({
-      width: 100,
-      height: 100,
+      width: 200,
+      height: 200,
       type: "canvas",
       data: "https://upj.to/",
-      margin: 5,
+      margin: 8,
       qrOptions: {
         errorCorrectionLevel: "L"
       },
       dotsOptions: {
-        type: "dots",
-        color: "#000000"
+        type: qrOptions.dotsType,
+        color: qrOptions.dotsColor
       },
       backgroundOptions: {
-        color: "#FFFFFF"
+        color: qrOptions.backgroundColor
       }
     });
-  }, []);
+  }, [qrOptions]);
 
   useEffect(() => {
     if (qrCode.current && qrRef.current && shortUrl) {
@@ -150,11 +157,23 @@ export default function CreateLink() {
                   required
                 />
               </div>
-              {shortUrl && (
-                <div className="flex-shrink-0 p-2 border dark:border-gray-600 rounded-md bg-white dark:bg-gray-800">
-                  <div ref={qrRef} />
+              <div className="flex-shrink-0 p-2 border dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 relative group">
+                <button 
+                  onClick={() => setIsQRModalOpen(true)}
+                  className="absolute top-2 right-2 p-1.5 rounded-full bg-gray-100 dark:bg-gray-700 opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-gray-600 dark:text-gray-300">
+                    <path d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </button>
+                <div ref={qrRef} className="w-[200px] h-[200px] flex items-center justify-center">
+                  {!shortUrl && (
+                    <svg width="150" height="150" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-gray-400">
+                      <path d="M3 3h6v6H3V3zm2 2v2h2V5H5zm8-2h6v6h-6V3zm2 2v2h2V5h-2zM3 13h6v6H3v-6zm2 2v2h2v-2H5zm13-2h3v2h-3v-2zm0 4h3v2h-3v-2zM13 13h3v2h-3v-2zm0 4h3v2h-3v-2z" fill="currentColor"/>
+                    </svg>
+                  )}
                 </div>
-              )}
+              </div>
             </div>
           </div>
 
@@ -244,6 +263,77 @@ export default function CreateLink() {
           </div>
         </form>
       </div>
+      {isQRModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-96">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">自定義二維碼</h3>
+              <button onClick={() => setIsQRModalOpen(false)} className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M18 6L6 18M6 6l12 12"/>
+                </svg>
+              </button>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">點的樣式</label>
+                <select 
+                  value={qrOptions.dotsType}
+                  onChange={(e) => setQrOptions({...qrOptions, dotsType: e.target.value})}
+                  className="w-full p-2 border dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                >
+                  <option value="dots">圓點</option>
+                  <option value="rounded">圓角方形</option>
+                  <option value="square">方形</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">點的顏色</label>
+                <input 
+                  type="color"
+                  value={qrOptions.dotsColor}
+                  onChange={(e) => setQrOptions({...qrOptions, dotsColor: e.target.value})}
+                  className="w-full p-1 border dark:border-gray-600 rounded-md bg-white h-10"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">背景顏色</label>
+                <input 
+                  type="color"
+                  value={qrOptions.backgroundColor}
+                  onChange={(e) => setQrOptions({...qrOptions, backgroundColor: e.target.value})}
+                  className="w-full p-1 border dark:border-gray-600 rounded-md bg-white h-10"
+                />
+              </div>
+            </div>
+            <div className="mt-6 flex justify-end space-x-3">
+              <button 
+                onClick={() => setIsQRModalOpen(false)}
+                className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700"
+              >
+                取消
+              </button>
+              <button 
+                onClick={() => {
+                  qrCode.current?.update({
+                    dotsOptions: {
+                      type: qrOptions.dotsType,
+                      color: qrOptions.dotsColor
+                    },
+                    backgroundOptions: {
+                      color: qrOptions.backgroundColor
+                    }
+                  });
+                  setIsQRModalOpen(false);
+                }}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+              >
+                確定
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
