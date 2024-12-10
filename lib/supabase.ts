@@ -17,6 +17,11 @@ export const createClient = () => {
   return createClientComponentClient({
     supabaseUrl,
     supabaseKey: supabaseAnonKey,
+    options: {
+      db: {
+        schema: 'limq'
+      }
+    }
   })
 }
 

@@ -30,7 +30,7 @@ export default function LinkList() {
   const [viewMode, setViewMode] = useState('grid') // 'grid' or 'list'
   const [selectedTab, setSelectedTab] = useState('全部')
 
-  const tabs = ['全部', '我的', '共享']
+  const tabs = ['全部']
   const viewModes = ['grid', 'list']
 
   useEffect(() => {
@@ -43,7 +43,7 @@ export default function LinkList() {
           throw new Error('No access token found')
         }
 
-        const response = await fetch('https://limqapi.upj.to/resource/list', {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/resource/list`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -65,7 +65,11 @@ export default function LinkList() {
         }
 
         const data = await response.json()
-        setResources(data.data?.[0]?.resources || [])
+        // Flatten all resources from different tags
+        const allResources = data.data.reduce((acc, tag) => {
+          return [...acc, ...(tag.resources || [])]
+        }, [])
+        setResources(allResources)
       } catch (err) {
         setError(err instanceof Error ? err.message : 'An error occurred')
         console.error('Error fetching resources:', err)
@@ -88,47 +92,18 @@ export default function LinkList() {
               {loading && (
                 <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-gray-900 dark:border-white"></div>
               )}
+              <a
+                href="/create_link"
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                创建链接
+              </a>
               <ThemeToggle />
             </div>
           </div>
         </div>
       </header>
 
-      {/* Tabs and View Mode */}
-      <div className="max-w-7xl mx-auto px-4 py-4">
-        <div className="flex justify-between items-center border-b dark:border-gray-700">
-          <div className="flex space-x-8">
-            {tabs.map((tab) => (
-              <button
-                key={tab}
-                className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                  selectedTab === tab
-                    ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
-                }`}
-                onClick={() => setSelectedTab(tab)}
-              >
-                {tab}
-              </button>
-            ))}
-          </div>
-          <div className="flex items-center space-x-2">
-            {viewModes.map((mode) => (
-              <button
-                key={mode}
-                className={`p-2 rounded-lg ${
-                  viewMode === mode
-                    ? 'bg-gray-100 dark:bg-gray-700'
-                    : 'hover:bg-gray-50 dark:hover:bg-gray-800'
-                }`}
-                onClick={() => setViewMode(mode)}
-              >
-                {mode === 'grid' ? '网格' : '列表'}
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 py-6">
