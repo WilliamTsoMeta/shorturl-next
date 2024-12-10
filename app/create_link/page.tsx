@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { createClient } from '@/lib/supabase';
 import { useTeam } from '@/lib/contexts/TeamContext';
+import QRCodeStyling from "qr-code-styling";
 
 export default function CreateLink() {
   const router = useRouter();
@@ -14,6 +15,39 @@ export default function CreateLink() {
   const [longUrl, setLongUrl] = useState('');
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
+
+  const qrRef = useRef<HTMLDivElement>(null);
+  const qrCode = useRef<QRCodeStyling>();
+
+  useEffect(() => {
+    qrCode.current = new QRCodeStyling({
+      width: 100,
+      height: 100,
+      type: "canvas",
+      data: "https://upj.to/",
+      margin: 5,
+      qrOptions: {
+        errorCorrectionLevel: "L"
+      },
+      dotsOptions: {
+        type: "dots",
+        color: "#000000"
+      },
+      backgroundOptions: {
+        color: "#FFFFFF"
+      }
+    });
+  }, []);
+
+  useEffect(() => {
+    if (qrCode.current && qrRef.current && shortUrl) {
+      qrRef.current.innerHTML = '';
+      qrCode.current.update({
+        data: `https://upj.to/${shortUrl}`
+      });
+      qrCode.current.append(qrRef.current);
+    }
+  }, [shortUrl]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -106,14 +140,21 @@ export default function CreateLink() {
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               短網址
             </label>
-            <div className="flex">
-              <input
-                type="text"
-                value={shortUrl}
-                onChange={(e) => setShortUrl(e.target.value)}
-                className="flex-1 p-2 border dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-                required
-              />
+            <div className="flex gap-4">
+              <div className="flex-1">
+                <input
+                  type="text"
+                  value={shortUrl}
+                  onChange={(e) => setShortUrl(e.target.value)}
+                  className="w-full p-2 border dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                  required
+                />
+              </div>
+              {shortUrl && (
+                <div className="flex-shrink-0 p-2 border dark:border-gray-600 rounded-md bg-white dark:bg-gray-800">
+                  <div ref={qrRef} />
+                </div>
+              )}
             </div>
           </div>
 
