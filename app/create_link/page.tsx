@@ -27,32 +27,34 @@ export default function CreateLink() {
   });
 
   useEffect(() => {
-    qrCode.current = new QRCodeStyling({
-      width: 200,
-      height: 200,
-      type: "canvas",
-      data: "https://upj.to/",
-      margin: 8,
-      qrOptions: {
-        errorCorrectionLevel: "L"
-      },
-      dotsOptions: {
-        type: qrOptions.dotsType,
-        color: qrOptions.dotsColor
-      },
-      backgroundOptions: {
-        color: qrOptions.backgroundColor
-      }
-    });
+    if (qrRef.current) {
+      qrRef.current.innerHTML = '';
+      qrCode.current = new QRCodeStyling({
+        width: 200,
+        height: 200,
+        type: "canvas",
+        data: shortUrl ? `https://upj.to/${shortUrl}` : "https://upj.to/",
+        margin: 8,
+        qrOptions: {
+          errorCorrectionLevel: "L"
+        },
+        dotsOptions: {
+          type: qrOptions.dotsType,
+          color: qrOptions.dotsColor
+        },
+        backgroundOptions: {
+          color: qrOptions.backgroundColor
+        }
+      });
+      qrCode.current.append(qrRef.current);
+    }
   }, [qrOptions]);
 
   useEffect(() => {
-    if (qrCode.current && qrRef.current && shortUrl) {
-      qrRef.current.innerHTML = '';
+    if (qrCode.current && shortUrl) {
       qrCode.current.update({
         data: `https://upj.to/${shortUrl}`
       });
-      qrCode.current.append(qrRef.current);
     }
   }, [shortUrl]);
 
