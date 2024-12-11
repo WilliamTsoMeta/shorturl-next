@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import Image from 'next/image';
 import { createClient } from '@/lib/supabase';
 import { useTeam } from '@/lib/contexts/TeamContext';
 import QRCodeStyling from "qr-code-styling";
@@ -17,10 +16,16 @@ export default function CreateLink() {
   const [description, setDescription] = useState('');
 
   const qrRef = useRef<HTMLDivElement>(null);
-  const qrCode = useRef<QRCodeStyling>();
+  const qrCode = useRef<QRCodeStyling | null>(null);
+
+  type DotsType = "dots" | "rounded" | "square";
 
   const [isQRModalOpen, setIsQRModalOpen] = useState(false);
-  const [qrOptions, setQrOptions] = useState({
+  const [qrOptions, setQrOptions] = useState<{
+    dotsType: DotsType;
+    dotsColor: string;
+    backgroundColor: string;
+  }>({
     dotsType: "dots",
     dotsColor: "#000000",
     backgroundColor: "#FFFFFF",
@@ -48,7 +53,7 @@ export default function CreateLink() {
       });
       qrCode.current.append(qrRef.current);
     }
-  }, [qrOptions]);
+  }, [qrOptions, shortUrl]);
 
   useEffect(() => {
     if (qrCode.current && shortUrl) {
@@ -281,7 +286,7 @@ export default function CreateLink() {
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">點的樣式</label>
                 <select 
                   value={qrOptions.dotsType}
-                  onChange={(e) => setQrOptions({...qrOptions, dotsType: e.target.value})}
+                  onChange={(e) => setQrOptions({...qrOptions, dotsType: e.target.value as DotsType})}
                   className="w-full p-2 border dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
                 >
                   <option value="dots">圓點</option>

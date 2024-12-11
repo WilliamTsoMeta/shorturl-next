@@ -27,11 +27,6 @@ export default function LinkList() {
   const [resources, setResources] = useState<Resource[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [viewMode, setViewMode] = useState('grid') // 'grid' or 'list'
-  const [selectedTab, setSelectedTab] = useState('全部')
-
-  const tabs = ['全部']
-  const viewModes = ['grid', 'list']
 
   useEffect(() => {
     const fetchResources = async () => {
