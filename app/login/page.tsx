@@ -81,7 +81,7 @@ export default function Login() {
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="mb-8 flex justify-center">
-          <Image src="/logo.png" alt="Logo" width={48} height={48} className="rounded-xl" />
+          <Image src="/limq.png" alt="Logo" width={48} height={48} className="rounded-xl" />
         </div>
 
         {/* Title */}
@@ -153,7 +153,7 @@ export default function Login() {
             onClick={handleGoogleLogin}
             className="w-full py-2 px-4 border dark:border-gray-700 rounded-lg flex items-center justify-center space-x-2 hover:bg-gray-50 dark:hover:bg-gray-800 bg-white dark:bg-gray-900 text-gray-900 dark:text-white transition-colors"
           >
-            <Image src="/google.svg" alt="Google" width={20} height={20} />
+            <Image src="/google.png" alt="Google" width={20} height={20} />
             <span>Sign in with Google</span>
           </button>
         </form>
