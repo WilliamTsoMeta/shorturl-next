@@ -55,17 +55,30 @@ export default function CreateLink() {
     type: 'Priority'
   });
   const [isQRModalOpen, setIsQRModalOpen] = useState(false);
-  const [qrOptions, setQrOptions] = useState<{
-    dotsType: "dots" | "rounded" | "square";
-    dotsColor: string;
-    backgroundColor: string;
-  }>({
-    dotsType: "dots",
-    dotsColor: "#000000",
-    backgroundColor: "#FFFFFF",
+  const [qrCodeOptions, setQrCodeOptions] = useState({
+    width: 400,
+    height: 400,
+    margin: 4,
+    dotsOptions: {
+      color: "#000000",
+      type: "square"
+    },
+    backgroundOptions: {
+      color: "#FFFFFF",
+    },
+    cornersSquareOptions: {
+      type: "square",
+      color: "#000000"
+    },
+    cornersDotOptions: {
+      type: "square",
+      color: "#000000"
+    }
   });
   const qrRef = useRef<HTMLDivElement>(null);
   const qrCode = useRef<QRCodeStyling | null>(null);
+  const previewQrRef = useRef<HTMLDivElement>(null);
+  const previewQrCode = useRef<QRCodeStyling | null>(null);
 
   type DotsType = "dots" | "rounded" | "square";
 
@@ -160,11 +173,11 @@ export default function CreateLink() {
           errorCorrectionLevel: "L"
         },
         dotsOptions: {
-          type: qrOptions.dotsType as any,
-          color: qrOptions.dotsColor
+          type: qrCodeOptions.dotsOptions.type as any,
+          color: qrCodeOptions.dotsOptions.color
         },
         backgroundOptions: {
-          color: qrOptions.backgroundColor
+          color: qrCodeOptions.backgroundOptions.color
         }
       });
       qrCode.current.append(qrRef.current);
@@ -172,15 +185,46 @@ export default function CreateLink() {
       qrCode.current.update({
         data: shortUrl ? `https://${domain}/${shortUrl}` : `https://${domain}/`,
         dotsOptions: {
-          type: qrOptions.dotsType as any,
-          color: qrOptions.dotsColor
+          type: qrCodeOptions.dotsOptions.type as any,
+          color: qrCodeOptions.dotsOptions.color
         },
         backgroundOptions: {
-          color: qrOptions.backgroundColor
+          color: qrCodeOptions.backgroundOptions.color
         }
       });
     }
-  }, [shortUrl, qrOptions, domain]);
+  }, [shortUrl, qrCodeOptions, domain]);
+
+  useEffect(() => {
+    if (previewQrRef.current && !previewQrCode.current) {
+      previewQrCode.current = new QRCodeStyling({
+        width: qrCodeOptions.width,
+        height: qrCodeOptions.height,
+        type: "svg",
+        data: `https://${domain}/${shortUrl || 'preview'}`,
+        margin: qrCodeOptions.margin,
+        qrOptions: {
+          errorCorrectionLevel: "L"
+        },
+        dotsOptions: qrCodeOptions.dotsOptions,
+        backgroundOptions: qrCodeOptions.backgroundOptions,
+        cornersSquareOptions: qrCodeOptions.cornersSquareOptions,
+        cornersDotOptions: qrCodeOptions.cornersDotOptions
+      });
+      previewQrCode.current.append(previewQrRef.current);
+    } else if (previewQrCode.current) {
+      previewQrCode.current.update({
+        width: qrCodeOptions.width,
+        height: qrCodeOptions.height,
+        data: `https://${domain}/${shortUrl || 'preview'}`,
+        margin: qrCodeOptions.margin,
+        dotsOptions: qrCodeOptions.dotsOptions,
+        backgroundOptions: qrCodeOptions.backgroundOptions,
+        cornersSquareOptions: qrCodeOptions.cornersSquareOptions,
+        cornersDotOptions: qrCodeOptions.cornersDotOptions
+      });
+    }
+  }, [qrCodeOptions, shortUrl, domain]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -238,11 +282,7 @@ export default function CreateLink() {
             teamId: team?.id,
             projectId: project?.id,
             qrcodeOption: {
-              options: {
-                width: 400,
-                height: 400,
-                margin: 4,
-              },
+              options: qrCodeOptions,
               saveAsTemplate: false,
               storeImage: true
             }
@@ -347,14 +387,21 @@ export default function CreateLink() {
           </div>
 
           <div className="flex-shrink-0 p-2 border dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 relative group w-[220px]">
-            <button 
-              onClick={() => setIsQRModalOpen(true)}
-              className="absolute top-2 right-2 p-1.5 rounded-full bg-gray-100 dark:bg-gray-700 opacity-0 group-hover:opacity-100 transition-opacity"
-            >
-              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-              </svg>
-            </button>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center space-x-2">
+                <div ref={qrRef} />
+                <button
+                  type="button"
+                  onClick={() => setIsQRModalOpen(true)}
+                  className="p-2 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 bg-white dark:bg-gray-800 rounded-full shadow-sm hover:shadow-md border border-gray-200 dark:border-gray-700 transition-all"
+                  title="Customize QR Code"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                  </svg>
+                </button>
+              </div>
+            </div>
             <div 
               ref={qrRef} 
               className="w-[200px] h-[200px] flex items-center justify-center"
@@ -605,61 +652,164 @@ export default function CreateLink() {
               </button>
             </div>
             <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Dot Style</label>
-                <select 
-                  value={qrOptions.dotsType}
-                  onChange={(e) => setQrOptions({...qrOptions, dotsType: e.target.value as DotsType})}
-                  className="w-full p-2 border dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Width (px)
+                  </label>
+                  <input
+                    type="number"
+                    min="100"
+                    max="1000"
+                    value={qrCodeOptions.width}
+                    onChange={(e) => setQrCodeOptions({
+                      ...qrCodeOptions,
+                      width: parseInt(e.target.value),
+                      height: parseInt(e.target.value) // Keep aspect ratio
+                    })}
+                    className="w-full p-2 border dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Margin
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="20"
+                    value={qrCodeOptions.margin}
+                    onChange={(e) => setQrCodeOptions({
+                      ...qrCodeOptions,
+                      margin: parseInt(e.target.value)
+                    })}
+                    className="w-full p-2 border dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Dots Color
+                  </label>
+                  <input
+                    type="color"
+                    value={qrCodeOptions.dotsOptions.color}
+                    onChange={(e) => setQrCodeOptions({
+                      ...qrCodeOptions,
+                      dotsOptions: {
+                        ...qrCodeOptions.dotsOptions,
+                        color: e.target.value
+                      }
+                    })}
+                    className="w-full p-1 h-10 border dark:border-gray-600 rounded-md bg-white dark:bg-gray-800"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Background Color
+                  </label>
+                  <input
+                    type="color"
+                    value={qrCodeOptions.backgroundOptions.color}
+                    onChange={(e) => setQrCodeOptions({
+                      ...qrCodeOptions,
+                      backgroundOptions: {
+                        ...qrCodeOptions.backgroundOptions,
+                        color: e.target.value
+                      }
+                    })}
+                    className="w-full p-1 h-10 border dark:border-gray-600 rounded-md bg-white dark:bg-gray-800"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Dots Style
+                  </label>
+                  <select
+                    value={qrCodeOptions.dotsOptions.type}
+                    onChange={(e) => setQrCodeOptions({
+                      ...qrCodeOptions,
+                      dotsOptions: {
+                        ...qrCodeOptions.dotsOptions,
+                        type: e.target.value
+                      }
+                    })}
+                    className="w-full p-2 border dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                  >
+                    <option value="square">Square</option>
+                    <option value="dots">Dots</option>
+                    <option value="rounded">Rounded</option>
+                    <option value="extra-rounded">Extra Rounded</option>
+                    <option value="classy">Classy</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Corner Style
+                  </label>
+                  <select
+                    value={qrCodeOptions.cornersSquareOptions.type}
+                    onChange={(e) => setQrCodeOptions({
+                      ...qrCodeOptions,
+                      cornersSquareOptions: {
+                        ...qrCodeOptions.cornersSquareOptions,
+                        type: e.target.value
+                      },
+                      cornersDotOptions: {
+                        ...qrCodeOptions.cornersDotOptions,
+                        type: e.target.value
+                      }
+                    })}
+                    className="w-full p-2 border dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                  >
+                    <option value="square">Square</option>
+                    <option value="dot">Dot</option>
+                    <option value="extra-rounded">Extra Rounded</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="mt-4">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Preview
+                </label>
+                <div className="border dark:border-gray-600 rounded-md p-4 flex justify-center">
+                  <div ref={previewQrRef} />
+                </div>
+              </div>
+
+              <div className="flex justify-end space-x-2 mt-4">
+                <button
+                  type="button"
+                  onClick={() => setIsQRModalOpen(false)}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                 >
-                  <option value="dots">Dots</option>
-                  <option value="rounded">Rounded Square</option>
-                  <option value="square">Square</option>
-                </select>
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    qrCode.current?.update({
+                      dotsOptions: {
+                        type: qrCodeOptions.dotsOptions.type,
+                        color: qrCodeOptions.dotsOptions.color
+                      },
+                      backgroundOptions: {
+                        color: qrCodeOptions.backgroundOptions.color
+                      }
+                    });
+                    setIsQRModalOpen(false);
+                  }}
+                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                >
+                  Apply
+                </button>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Dot Color</label>
-                <input 
-                  type="color"
-                  value={qrOptions.dotsColor}
-                  onChange={(e) => setQrOptions({...qrOptions, dotsColor: e.target.value})}
-                  className="w-full p-1 border dark:border-gray-600 rounded-md bg-white h-10"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Background Color</label>
-                <input 
-                  type="color"
-                  value={qrOptions.backgroundColor}
-                  onChange={(e) => setQrOptions({...qrOptions, backgroundColor: e.target.value})}
-                  className="w-full p-1 border dark:border-gray-600 rounded-md bg-white h-10"
-                />
-              </div>
-            </div>
-            <div className="mt-6 flex justify-end space-x-3">
-              <button 
-                onClick={() => setIsQRModalOpen(false)}
-                className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700"
-              >
-                Cancel
-              </button>
-              <button 
-                onClick={() => {
-                  qrCode.current?.update({
-                    dotsOptions: {
-                      type: qrOptions.dotsType,
-                      color: qrOptions.dotsColor
-                    },
-                    backgroundOptions: {
-                      color: qrOptions.backgroundColor
-                    }
-                  });
-                  setIsQRModalOpen(false);
-                }}
-                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-              >
-                Confirm
-              </button>
             </div>
           </div>
         </div>
