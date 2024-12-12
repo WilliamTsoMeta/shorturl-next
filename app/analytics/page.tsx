@@ -44,6 +44,51 @@ type FilterOption = {
   value: string;
 };
 
+interface StatisticsResponse {
+  total_clicks: number;
+  device: {
+    [key: string]: {
+      clicks: number;
+    };
+  };
+  browser: {
+    [key: string]: {
+      clicks: number;
+    };
+  };
+  os: {
+    [key: string]: {
+      clicks: number;
+    };
+  };
+  referrer: {
+    [key: string]: {
+      clicks: number;
+    };
+  };
+  hourly_clicks: Array<{
+    hour: string;
+    clicks: number;
+  }>;
+  daily_clicks: Array<{
+    date: string;
+    clicks: number;
+  }>;
+  monthly_clicks: Array<{
+    month: string;
+    clicks: number;
+  }>;
+  user_actions: Array<{
+    user_id: string;
+    action: string;
+    action_time: string;
+  }>;
+  subpaths: Array<{
+    path: string;
+    clicks: number;
+  }>;
+}
+
 const timeRanges = [
   { label: 'Last 24 hours', days: 1 },
   { label: 'Last 7 days', days: 7 },
@@ -53,6 +98,44 @@ const timeRanges = [
   { label: 'Last 12 months', days: 365 },
   { label: 'All Time', days: 0, special: 'allTime' }
 ];
+
+interface ChartCardProps {
+  title: string;
+  children: React.ReactNode;
+}
+
+const ChartCard = ({ title, children }: ChartCardProps) => (
+  <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
+    <h3 className="text-lg font-semibold mb-4">{title}</h3>
+    <div className="w-full h-64">
+      {children}
+    </div>
+  </div>
+);
+
+const LineChart = ({ data, xKey, yKey, theme }: { data: any[], xKey: string, yKey: string, theme: string }) => {
+  if (!data || data.length === 0) {
+    return <div className="flex items-center justify-center h-full text-gray-500">No data available</div>;
+  }
+
+  return (
+    <div className="flex items-center justify-center h-full text-gray-500">
+      Chart will be implemented here
+    </div>
+  );
+};
+
+const PieChart = ({ data, theme }: { data: any[], theme: string }) => {
+  if (!data || data.length === 0) {
+    return <div className="flex items-center justify-center h-full text-gray-500">No data available</div>;
+  }
+
+  return (
+    <div className="flex items-center justify-center h-full text-gray-500">
+      Chart will be implemented here
+    </div>
+  );
+};
 
 export default function Analytics() {
   const { theme } = useTheme();
@@ -76,6 +159,7 @@ export default function Analytics() {
     link?: FilterOption;
     tag?: FilterOption;
   }>({});
+  const [statistics, setStatistics] = useState<StatisticsResponse | null>(null);
 
   const fetchResources = async () => {
     try {
@@ -151,6 +235,72 @@ export default function Analytics() {
     }
   };
 
+  const fetchStatistics = async () => {
+    try {
+      setLoading(true);
+      const supabase = createClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session?.access_token) {
+        console.error('No access token available');
+        return;
+      }
+
+      const selectedResource = selectedFilters['link'];
+      if (!selectedResource) return;
+
+      // 转换开始时间为 UTC
+      const utcStartDate = startDate 
+        ? new Date(Date.UTC(
+            startDate.getFullYear(),
+            startDate.getMonth(),
+            startDate.getDate(),
+            0, 0, 0, 0
+          )).toISOString()
+        : new Date(0).toISOString();
+
+      // 转换结束时间为 UTC
+      const utcEndDate = endDate
+        ? new Date(Date.UTC(
+            endDate.getFullYear(),
+            endDate.getMonth(),
+            endDate.getDate(),
+            23, 59, 59, 999
+          )).toISOString()
+        : new Date(Date.UTC(
+            new Date().getFullYear(),
+            new Date().getMonth(),
+            new Date().getDate(),
+            23, 59, 59, 999
+          )).toISOString();
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/statistics`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          shortUrlId: selectedResource.id,
+          url: selectedResource.value,
+          startDate: utcStartDate,
+          endDate: utcEndDate,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch statistics');
+      }
+
+      const data = await response.json();
+      setStatistics(data);
+    } catch (error) {
+      console.error('Error fetching statistics:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (activeFilter === 'link') {
       fetchResources();
@@ -158,6 +308,10 @@ export default function Analytics() {
       fetchTags();
     }
   }, [activeFilter, team?.id]);
+
+  useEffect(() => {
+    fetchStatistics();
+  }, [selectedFilters['link'], startDate, endDate]);
 
   const filterOptions: Record<string, FilterOption[]> = {
     domain: [
@@ -207,6 +361,54 @@ export default function Analytics() {
 
     setDateRange([start, end]);
     setSelectedRange(range);
+  };
+
+  const prepareChartData = () => {
+    if (!statistics) return {
+      devices: [],
+      browsers: [],
+      os: [],
+      referrers: [],
+      hourlyClicks: [],
+      dailyClicks: [],
+      monthlyClicks: [],
+      subpaths: []
+    };
+
+    return {
+      devices: Object.entries(statistics.device || {}).map(([name, data]) => ({
+        name: name === 'null' ? 'Unknown' : name,
+        value: data.clicks,
+      })),
+      browsers: Object.entries(statistics.browser || {}).map(([name, data]) => ({
+        name: name === 'null' ? 'Unknown' : name,
+        value: data.clicks,
+      })),
+      os: Object.entries(statistics.os || {}).map(([name, data]) => ({
+        name: name === 'null' ? 'Unknown' : name,
+        value: data.clicks,
+      })),
+      referrers: Object.entries(statistics.referrer || {}).map(([name, data]) => ({
+        name: name === 'null' ? 'Direct' : name,
+        value: data.clicks,
+      })),
+      hourlyClicks: (statistics.hourly_clicks || []).map(item => ({
+        time: new Date(item.hour).toLocaleString(),
+        clicks: item.clicks,
+      })),
+      dailyClicks: (statistics.daily_clicks || []).map(item => ({
+        date: item.date,
+        clicks: item.clicks,
+      })),
+      monthlyClicks: (statistics.monthly_clicks || []).map(item => ({
+        month: item.month,
+        clicks: item.clicks,
+      })),
+      subpaths: (statistics.subpaths || []).map(item => ({
+        name: item.path === '(empty)' ? 'Root Path' : item.path,
+        value: item.clicks,
+      })),
+    };
   };
 
   const TabButton = ({ isActive, onClick, children }: { isActive: boolean; onClick: () => void; children: React.ReactNode }) => (
@@ -335,7 +537,7 @@ export default function Analytics() {
                   key={filter.id}
                   className="flex items-center gap-1 px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-100 rounded-md text-sm"
                 >
-                  <span className="capitalize">{type}: {filter.value}</span>
+                  <span>{type}: {filter.value}</span>
                   <button
                     onClick={() => handleOptionSelect(filter, type as 'domain' | 'link' | 'tag')}
                     className="ml-1 text-blue-600 dark:text-blue-300 hover:text-blue-800 dark:hover:text-blue-100"
@@ -431,34 +633,73 @@ export default function Analytics() {
             {/* Chart component would go here */}
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Panel
-              title="Links"
-              tabs={['Short Links', 'Destination URLs']}
-              activeTab={activeTab.links}
-              onTabChange={(tab: string) => setActiveTab({ ...activeTab, links: tab })}
-            />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+            {selectedFilters['link'] ? (
+              loading ? (
+                <div className="col-span-2 flex justify-center items-center h-64">
+                  <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900"></div>
+                </div>
+              ) : statistics ? (
+                <>
+                  <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
+                    <h3 className="text-lg font-semibold mb-4">Total Clicks</h3>
+                    <p className="text-4xl font-bold">{statistics.total_clicks}</p>
+                  </div>
+                  
+                  <ChartCard title="Clicks Over Time">
+                    <LineChart
+                      data={prepareChartData()?.dailyClicks || []}
+                      xKey="date"
+                      yKey="clicks"
+                      theme={theme}
+                    />
+                  </ChartCard>
 
-            <Panel
-              title="Location"
-              tabs={['Countries', 'Cities', 'Regions']}
-              activeTab={activeTab.location}
-              onTabChange={(tab: string) => setActiveTab({ ...activeTab, location: tab })}
-            />
+                  <ChartCard title="Devices">
+                    <PieChart
+                      data={prepareChartData()?.devices || []}
+                      theme={theme}
+                    />
+                  </ChartCard>
 
-            <Panel
-              title="Devices"
-              tabs={['Devices', 'Browsers', 'OS']}
-              activeTab={activeTab.devices}
-              onTabChange={(tab: string) => setActiveTab({ ...activeTab, devices: tab })}
-            />
+                  <ChartCard title="Browsers">
+                    <PieChart
+                      data={prepareChartData()?.browsers || []}
+                      theme={theme}
+                    />
+                  </ChartCard>
 
-            <Panel
-              title="Referrers"
-              tabs={['Referrers', 'Referrer URLs']}
-              activeTab={activeTab.referrers}
-              onTabChange={(tab: string) => setActiveTab({ ...activeTab, referrers: tab })}
-            />
+                  <ChartCard title="Operating Systems">
+                    <PieChart
+                      data={prepareChartData()?.os || []}
+                      theme={theme}
+                    />
+                  </ChartCard>
+
+                  <ChartCard title="Referrers">
+                    <PieChart
+                      data={prepareChartData()?.referrers || []}
+                      theme={theme}
+                    />
+                  </ChartCard>
+
+                  <ChartCard title="Subpaths">
+                    <PieChart
+                      data={prepareChartData()?.subpaths || []}
+                      theme={theme}
+                    />
+                  </ChartCard>
+                </>
+              ) : (
+                <div className="col-span-2 text-center text-gray-500 dark:text-gray-400">
+                  No data available
+                </div>
+              )
+            ) : (
+              <div className="col-span-2 text-center text-gray-500 dark:text-gray-400">
+                Please select a link to view analytics
+              </div>
+            )}
           </div>
         </div>
       </div>
