@@ -1,11 +1,33 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTheme } from 'next-themes';
 import { Menu, Transition } from '@headlessui/react';
 import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
 import { format, subDays, startOfYear } from 'date-fns';
+import { createClient } from '@/lib/supabase';
+
+interface Resource {
+  id: string;
+  type: string;
+  attributes: {
+    title: string;
+    shortUrl: string;
+    originalUrl: string;
+    description: string;
+    icon: string;
+    click_count: number;
+    created_at: string;
+  };
+}
+
+type FilterOption = {
+  id: string;
+  type: 'domain' | 'link' | 'tag';
+  value: string;
+  title?: string;
+};
 
 const timeRanges = [
   { label: 'Last 24 hours', days: 1 },
@@ -17,12 +39,6 @@ const timeRanges = [
   { label: 'All Time', days: 0, special: 'allTime' }
 ];
 
-type FilterOption = {
-  id: string;
-  type: 'domain' | 'link' | 'tag';
-  value: string;
-};
-
 export default function Analytics() {
   const { theme } = useTheme();
   const [selectedRange, setSelectedRange] = useState(timeRanges[0]);
@@ -31,26 +47,73 @@ export default function Analytics() {
   const [startDate, endDate] = dateRange;
   const [activeFilter, setActiveFilter] = useState<'domain' | 'link' | 'tag'>('domain');
   const [searchTerm, setSearchTerm] = useState('');
+  const [resources, setResources] = useState<Resource[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState({
+    links: 'Short Links',
+    location: 'Countries',
+    devices: 'Devices',
+    referrers: 'Referrers'
+  });
 
-  // 示例数据
+  const fetchResources = async () => {
+    try {
+      setLoading(true);
+      const supabase = createClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session?.access_token) {
+        throw new Error('No access token found');
+      }
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/resource/list`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
+        },
+        body: JSON.stringify({
+          resourceTypes: ["shorturl"],
+          resourceSortBy: "created_at",
+          resourceSortOrder: "DESC",
+          pageSize: 100,
+          pageNumber: 1,
+          isFavorite: null,
+          isCreatedByUser: null
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch resources');
+      }
+
+      const data = await response.json();
+      // Flatten all resources from different tags
+      const allResources = data.data.reduce((acc, tag) => {
+        return [...acc, ...(tag.resources || [])];
+      }, []);
+      setResources(allResources);
+    } catch (error) {
+      console.error('Error fetching resources:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchResources();
+  }, []);
+
   const filterOptions: Record<string, FilterOption[]> = {
     domain: [
-      { id: '1', type: 'domain', value: 'dub.sh' },
-      { id: '2', type: 'domain', value: 'dub.link' },
-      { id: '3', type: 'domain', value: 'chatg.pt' },
-      { id: '4', type: 'domain', value: 'spti.fi' },
-      { id: '5', type: 'domain', value: 'git.new' },
-      { id: '6', type: 'domain', value: 'cal.link' },
-      { id: '7', type: 'domain', value: 'amzn.id' },
-      { id: '8', type: 'domain', value: 'ggl.link' },
-      { id: '9', type: 'domain', value: 'fig.page' },
-      { id: '10', type: 'domain', value: 'loooooooo.ng' }
+      { id: '1', type: 'domain', value: 'upj.to' }
     ],
-    link: [
-      { id: '11', type: 'link', value: '/blog' },
-      { id: '12', type: 'link', value: '/docs' },
-      { id: '13', type: 'link', value: '/about' }
-    ],
+    link: resources.map(resource => ({
+      id: resource.id,
+      type: 'link',
+      value: resource.attributes.shortUrl,
+      title: resource.attributes.title || resource.attributes.originalUrl
+    })),
     tag: [
       { id: '14', type: 'tag', value: 'marketing' },
       { id: '15', type: 'tag', value: 'social' },
@@ -61,6 +124,10 @@ export default function Analytics() {
   const filteredOptions = filterOptions[activeFilter].filter(option =>
     option.value.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const handleOptionSelect = (option: FilterOption) => {
+    console.log('Selected:', option);
+  };
 
   const handleRangeSelect = (range: typeof timeRanges[0]) => {
     setIsCustomRange(false);
@@ -78,13 +145,6 @@ export default function Analytics() {
     setDateRange([start, end]);
     setSelectedRange(range);
   };
-
-  const [activeTab, setActiveTab] = useState({
-    links: 'Short Links',
-    location: 'Countries',
-    devices: 'Devices',
-    referrers: 'Referrers'
-  });
 
   const TabButton = ({ isActive, onClick, children }: { isActive: boolean; onClick: () => void; children: React.ReactNode }) => (
     <button
@@ -183,22 +243,34 @@ export default function Analytics() {
 
                     {/* Options List */}
                     <div className="max-h-[240px] overflow-y-auto">
-                      {filteredOptions.map((option) => (
-                        <Menu.Item key={option.id}>
-                          {({ active }) => (
-                            <button
-                              className={`${
-                                active
-                                  ? 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white'
-                                  : 'text-gray-700 dark:text-gray-200'
-                              } group flex w-full items-center px-3 py-2 text-sm rounded-md`}
-                            >
-                              <span className="w-4 h-4 mr-3 text-gray-400">⭕</span>
-                              {option.value}
-                            </button>
-                          )}
-                        </Menu.Item>
-                      ))}
+                      {loading ? (
+                        <div className="px-4 py-2 text-gray-500 dark:text-gray-400">
+                          Loading...
+                        </div>
+                      ) : (
+                        filteredOptions.map((option) => (
+                          <Menu.Item key={option.id}>
+                            {({ active }) => (
+                              <button
+                                className={`${
+                                  active
+                                    ? 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white'
+                                    : 'text-gray-700 dark:text-gray-200'
+                                } group flex w-full items-center px-3 py-2 text-sm rounded-md`}
+                                onClick={() => handleOptionSelect(option)}
+                              >
+                                <span className="w-4 h-4 mr-3 text-gray-400">⭕</span>
+                                {option.value}
+                              </button>
+                            )}
+                          </Menu.Item>
+                        ))
+                      )}
+                      {!loading && filteredOptions.length === 0 && (
+                        <div className="px-4 py-2 text-gray-500 dark:text-gray-400">
+                          No results found
+                        </div>
+                      )}
                     </div>
                   </div>
                 </Menu.Items>
