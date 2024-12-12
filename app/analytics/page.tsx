@@ -17,12 +17,50 @@ const timeRanges = [
   { label: 'All Time', days: 0, special: 'allTime' }
 ];
 
+type FilterOption = {
+  id: string;
+  type: 'domain' | 'link' | 'tag';
+  value: string;
+};
+
 export default function Analytics() {
   const { theme } = useTheme();
   const [selectedRange, setSelectedRange] = useState(timeRanges[0]);
   const [isCustomRange, setIsCustomRange] = useState(false);
   const [dateRange, setDateRange] = useState<[Date | null, Date | null]>([new Date(), new Date()]);
   const [startDate, endDate] = dateRange;
+  const [activeFilter, setActiveFilter] = useState<'domain' | 'link' | 'tag'>('domain');
+  const [searchTerm, setSearchTerm] = useState('');
+
+  // 示例数据
+  const filterOptions: Record<string, FilterOption[]> = {
+    domain: [
+      { id: '1', type: 'domain', value: 'dub.sh' },
+      { id: '2', type: 'domain', value: 'dub.link' },
+      { id: '3', type: 'domain', value: 'chatg.pt' },
+      { id: '4', type: 'domain', value: 'spti.fi' },
+      { id: '5', type: 'domain', value: 'git.new' },
+      { id: '6', type: 'domain', value: 'cal.link' },
+      { id: '7', type: 'domain', value: 'amzn.id' },
+      { id: '8', type: 'domain', value: 'ggl.link' },
+      { id: '9', type: 'domain', value: 'fig.page' },
+      { id: '10', type: 'domain', value: 'loooooooo.ng' }
+    ],
+    link: [
+      { id: '11', type: 'link', value: '/blog' },
+      { id: '12', type: 'link', value: '/docs' },
+      { id: '13', type: 'link', value: '/about' }
+    ],
+    tag: [
+      { id: '14', type: 'tag', value: 'marketing' },
+      { id: '15', type: 'tag', value: 'social' },
+      { id: '16', type: 'tag', value: 'docs' }
+    ]
+  };
+
+  const filteredOptions = filterOptions[activeFilter].filter(option =>
+    option.value.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   const handleRangeSelect = (range: typeof timeRanges[0]) => {
     setIsCustomRange(false);
@@ -94,10 +132,79 @@ export default function Analytics() {
           </div>
 
           <div className="flex gap-2 bg-gray-50 dark:bg-gray-700 p-3 rounded-md mb-6">
-            <button className="px-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 dark:text-white">
-              Filter
-            </button>
-            
+            <Menu as="div" className="relative">
+              <Menu.Button className="px-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 dark:text-white inline-flex items-center">
+                <span>Filter</span>
+                <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </Menu.Button>
+
+              <Transition
+                enter="transition duration-100 ease-out"
+                enterFrom="transform scale-95 opacity-0"
+                enterTo="transform scale-100 opacity-100"
+                leave="transition duration-75 ease-out"
+                leaveFrom="transform scale-100 opacity-100"
+                leaveTo="transform scale-95 opacity-0"
+              >
+                <Menu.Items className="absolute left-0 mt-2 w-[280px] origin-top-left bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg focus:outline-none">
+                  <div className="p-2">
+                    {/* Filter Type Tabs */}
+                    <div className="flex gap-1 mb-2 border-b border-gray-200 dark:border-gray-700">
+                      {(['domain', 'link', 'tag'] as const).map((type) => (
+                        <button
+                          key={type}
+                          onClick={() => {
+                            setActiveFilter(type);
+                            setSearchTerm('');
+                          }}
+                          className={`px-3 py-2 text-sm rounded-t-md ${
+                            activeFilter === type
+                              ? 'text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400'
+                              : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+                          }`}
+                        >
+                          {type.charAt(0).toUpperCase() + type.slice(1)}
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Search Input */}
+                    <div className="relative mb-2">
+                      <input
+                        type="text"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        placeholder={`Search ${activeFilter}...`}
+                        className="w-full px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-md bg-gray-50 dark:bg-gray-900 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400"
+                      />
+                    </div>
+
+                    {/* Options List */}
+                    <div className="max-h-[240px] overflow-y-auto">
+                      {filteredOptions.map((option) => (
+                        <Menu.Item key={option.id}>
+                          {({ active }) => (
+                            <button
+                              className={`${
+                                active
+                                  ? 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white'
+                                  : 'text-gray-700 dark:text-gray-200'
+                              } group flex w-full items-center px-3 py-2 text-sm rounded-md`}
+                            >
+                              <span className="w-4 h-4 mr-3 text-gray-400">⭕</span>
+                              {option.value}
+                            </button>
+                          )}
+                        </Menu.Item>
+                      ))}
+                    </div>
+                  </div>
+                </Menu.Items>
+              </Transition>
+            </Menu>
+
             <Menu as="div" className="relative">
               <Menu.Button className="px-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 dark:text-white inline-flex items-center">
                 <span>{isCustomRange ? 'Custom Range' : selectedRange.label}</span>
