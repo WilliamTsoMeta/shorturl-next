@@ -7,6 +7,7 @@ import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
 import { format, subDays, startOfYear } from 'date-fns';
 import { createClient } from '@/lib/supabase';
+import { useTeam } from '@/lib/contexts/TeamContext';
 
 interface Resource {
   id: string;
@@ -22,11 +23,25 @@ interface Resource {
   };
 }
 
+interface Tag {
+  id: string;
+  name: string;
+  type: string;
+  attributes: Record<string, any>;
+  created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
+  parent_tag_id: string | null;
+  team_id: string;
+  is_shared: boolean;
+  schema_version: number;
+  is_system: boolean;
+}
+
 type FilterOption = {
   id: string;
   type: 'domain' | 'link' | 'tag';
   value: string;
-  title?: string;
 };
 
 const timeRanges = [
@@ -41,6 +56,7 @@ const timeRanges = [
 
 export default function Analytics() {
   const { theme } = useTheme();
+  const { team } = useTeam();
   const [selectedRange, setSelectedRange] = useState(timeRanges[0]);
   const [isCustomRange, setIsCustomRange] = useState(false);
   const [dateRange, setDateRange] = useState<[Date | null, Date | null]>([new Date(), new Date()]);
@@ -48,6 +64,7 @@ export default function Analytics() {
   const [activeFilter, setActiveFilter] = useState<'domain' | 'link' | 'tag'>('domain');
   const [searchTerm, setSearchTerm] = useState('');
   const [resources, setResources] = useState<Resource[]>([]);
+  const [tags, setTags] = useState<Tag[]>([]);
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState({
     links: 'Short Links',
@@ -88,7 +105,6 @@ export default function Analytics() {
       }
 
       const data = await response.json();
-      // Flatten all resources from different tags
       const allResources = data.data.reduce((acc, tag) => {
         return [...acc, ...(tag.resources || [])];
       }, []);
@@ -100,9 +116,44 @@ export default function Analytics() {
     }
   };
 
+  const fetchTags = async () => {
+    if (!team?.id) return;
+    
+    try {
+      setLoading(true);
+      const supabase = createClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session?.access_token) {
+        throw new Error('No access token found');
+      }
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/tags?teamId=${team.id}`, {
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch tags');
+      }
+
+      const data = await response.json();
+      setTags(data);
+    } catch (error) {
+      console.error('Error fetching tags:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    fetchResources();
-  }, []);
+    if (activeFilter === 'link') {
+      fetchResources();
+    } else if (activeFilter === 'tag') {
+      fetchTags();
+    }
+  }, [activeFilter, team?.id]);
 
   const filterOptions: Record<string, FilterOption[]> = {
     domain: [
@@ -111,19 +162,14 @@ export default function Analytics() {
     link: resources.map(resource => ({
       id: resource.id,
       type: 'link',
-      value: resource.attributes.shortUrl,
-      title: resource.attributes.title || resource.attributes.originalUrl
+      value: resource.attributes.shortUrl
     })),
-    tag: [
-      { id: '14', type: 'tag', value: 'marketing' },
-      { id: '15', type: 'tag', value: 'social' },
-      { id: '16', type: 'tag', value: 'docs' }
-    ]
+    tag: tags.map(tag => ({
+      id: tag.id,
+      type: 'tag',
+      value: tag.name
+    }))
   };
-
-  const filteredOptions = filterOptions[activeFilter].filter(option =>
-    option.value.toLowerCase().includes(searchTerm.toLowerCase())
-  );
 
   const handleOptionSelect = (option: FilterOption) => {
     console.log('Selected:', option);
@@ -248,7 +294,9 @@ export default function Analytics() {
                           Loading...
                         </div>
                       ) : (
-                        filteredOptions.map((option) => (
+                        filterOptions[activeFilter].filter(option =>
+                          option.value.toLowerCase().includes(searchTerm.toLowerCase())
+                        ).map((option) => (
                           <Menu.Item key={option.id}>
                             {({ active }) => (
                               <button
@@ -266,7 +314,9 @@ export default function Analytics() {
                           </Menu.Item>
                         ))
                       )}
-                      {!loading && filteredOptions.length === 0 && (
+                      {!loading && filterOptions[activeFilter].filter(option =>
+                        option.value.toLowerCase().includes(searchTerm.toLowerCase())
+                      ).length === 0 && (
                         <div className="px-4 py-2 text-gray-500 dark:text-gray-400">
                           No results found
                         </div>
