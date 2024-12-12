@@ -5,9 +5,10 @@ import { useTheme } from 'next-themes';
 import { Menu, Transition } from '@headlessui/react';
 import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
-import { format, subDays, startOfYear } from 'date-fns';
+import { format, subDays, startOfYear, eachHourOfInterval, eachDayOfInterval, eachMonthOfInterval, parseISO, startOfHour, startOfDay, startOfMonth } from 'date-fns';
 import { createClient } from '@/lib/supabase';
 import { useTeam } from '@/lib/contexts/TeamContext';
+import { LineChart as RechartsLineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPieChart, Pie, Cell } from 'recharts';
 
 interface Resource {
   id: string;
@@ -113,15 +114,66 @@ const ChartCard = ({ title, children }: ChartCardProps) => (
   </div>
 );
 
-const LineChart = ({ data, xKey, yKey, theme }: { data: any[], xKey: string, yKey: string, theme: string }) => {
+const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d', '#ffc658', '#ff7300'];
+
+const formatXAxis = (value: string, type: 'hourly' | 'daily' | 'monthly') => {
+  switch (type) {
+    case 'hourly':
+      return value; // Already formatted as HH:00
+    case 'daily':
+      return format(parseISO(value), 'MM/dd');
+    case 'monthly':
+      return format(parseISO(value), 'yyyy/MM');
+    default:
+      return value;
+  }
+};
+
+const LineChart = ({ data, xKey, yKey, theme, type }: { 
+  data: any[], 
+  xKey: string, 
+  yKey: string, 
+  theme: string,
+  type: 'hourly' | 'daily' | 'monthly'
+}) => {
   if (!data || data.length === 0) {
     return <div className="flex items-center justify-center h-full text-gray-500">No data available</div>;
   }
 
   return (
-    <div className="flex items-center justify-center h-full text-gray-500">
-      Chart will be implemented here
-    </div>
+    <ResponsiveContainer width="100%" height="100%">
+      <RechartsLineChart data={data} margin={{ top: 5, right: 30, left: 20, bottom: 25 }}>
+        <CartesianGrid strokeDasharray="3 3" stroke={theme === 'dark' ? '#374151' : '#e5e7eb'} />
+        <XAxis 
+          dataKey={xKey} 
+          stroke={theme === 'dark' ? '#9CA3AF' : '#4B5563'}
+          tick={{ fill: theme === 'dark' ? '#9CA3AF' : '#4B5563' }}
+          tickFormatter={(value) => formatXAxis(value, type)}
+          angle={-45}
+          textAnchor="end"
+          height={60}
+        />
+        <YAxis 
+          stroke={theme === 'dark' ? '#9CA3AF' : '#4B5563'}
+          tick={{ fill: theme === 'dark' ? '#9CA3AF' : '#4B5563' }}
+        />
+        <Tooltip 
+          contentStyle={{ 
+            backgroundColor: theme === 'dark' ? '#1F2937' : '#FFFFFF',
+            borderColor: theme === 'dark' ? '#374151' : '#E5E7EB',
+            color: theme === 'dark' ? '#F3F4F6' : '#1F2937'
+          }}
+          labelFormatter={(value) => formatXAxis(value, type)}
+        />
+        <Line 
+          type="monotone" 
+          dataKey={yKey} 
+          stroke="#3B82F6" 
+          strokeWidth={2}
+          dot={{ fill: '#3B82F6', strokeWidth: 2 }}
+        />
+      </RechartsLineChart>
+    </ResponsiveContainer>
   );
 };
 
@@ -131,9 +183,31 @@ const PieChart = ({ data, theme }: { data: any[], theme: string }) => {
   }
 
   return (
-    <div className="flex items-center justify-center h-full text-gray-500">
-      Chart will be implemented here
-    </div>
+    <ResponsiveContainer width="100%" height="100%">
+      <RechartsPieChart>
+        <Pie
+          data={data}
+          cx="50%"
+          cy="50%"
+          labelLine={false}
+          label={({ name, value, percent }) => `${name}: ${value} (${(percent * 100).toFixed(0)}%)`}
+          outerRadius={80}
+          fill="#8884d8"
+          dataKey="value"
+        >
+          {data.map((entry, index) => (
+            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+          ))}
+        </Pie>
+        <Tooltip
+          contentStyle={{ 
+            backgroundColor: theme === 'dark' ? '#1F2937' : '#FFFFFF',
+            borderColor: theme === 'dark' ? '#374151' : '#E5E7EB',
+            color: theme === 'dark' ? '#F3F4F6' : '#1F2937'
+          }}
+        />
+      </RechartsPieChart>
+    </ResponsiveContainer>
   );
 };
 
@@ -148,18 +222,13 @@ export default function Analytics() {
   const [resources, setResources] = useState<Resource[]>([]);
   const [tags, setTags] = useState<Tag[]>([]);
   const [loading, setLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState({
-    links: 'Short Links',
-    location: 'Countries',
-    devices: 'Devices',
-    referrers: 'Referrers'
-  });
   const [selectedFilters, setSelectedFilters] = useState<{
     domain?: FilterOption;
     link?: FilterOption;
     tag?: FilterOption;
   }>({});
   const [statistics, setStatistics] = useState<StatisticsResponse | null>(null);
+  const [activeTimeRange, setActiveTimeRange] = useState<'hourly' | 'daily' | 'monthly'>('daily');
 
   const fetchResources = async () => {
     try {
@@ -375,7 +444,8 @@ export default function Analytics() {
       subpaths: []
     };
 
-    return {
+    // 准备设备、浏览器、操作系统和来源数据
+    const basicData = {
       devices: Object.entries(statistics.device || {}).map(([name, data]) => ({
         name: name === 'null' ? 'Unknown' : name,
         value: data.clicks,
@@ -392,22 +462,75 @@ export default function Analytics() {
         name: name === 'null' ? 'Direct' : name,
         value: data.clicks,
       })),
-      hourlyClicks: (statistics.hourly_clicks || []).map(item => ({
-        time: new Date(item.hour).toLocaleString(),
-        clicks: item.clicks,
-      })),
-      dailyClicks: (statistics.daily_clicks || []).map(item => ({
-        date: item.date,
-        clicks: item.clicks,
-      })),
-      monthlyClicks: (statistics.monthly_clicks || []).map(item => ({
-        month: item.month,
-        clicks: item.clicks,
-      })),
       subpaths: (statistics.subpaths || []).map(item => ({
         name: item.path === '(empty)' ? 'Root Path' : item.path,
         value: item.clicks,
       })),
+    };
+
+    // 处理时间序列数据
+    const hourlyData = new Map(
+      (statistics.hourly_clicks || []).map(item => [
+        startOfHour(parseISO(item.hour)).getTime(),
+        item.clicks
+      ])
+    );
+
+    const dailyData = new Map(
+      (statistics.daily_clicks || []).map(item => [
+        startOfDay(parseISO(item.date)).getTime(),
+        item.clicks
+      ])
+    );
+
+    const monthlyData = new Map(
+      (statistics.monthly_clicks || []).map(item => [
+        startOfMonth(parseISO(item.month)).getTime(),
+        item.clicks
+      ])
+    );
+
+    // 获取时间范围
+    const now = new Date();
+    const hourlyRange = {
+      start: subDays(now, 1), // 最近24小时
+      end: now
+    };
+
+    const dailyRange = {
+      start: subDays(now, 30), // 最近30天
+      end: now
+    };
+
+    const monthlyRange = {
+      start: startOfYear(now), // 今年开始
+      end: now
+    };
+
+    // 生成完整的时间序列
+    const hourlyClicks = eachHourOfInterval(hourlyRange).map(hour => ({
+      time: format(hour, 'HH:00'),
+      timestamp: hour.getTime(),
+      clicks: hourlyData.get(hour.getTime()) || 0
+    }));
+
+    const dailyClicks = eachDayOfInterval(dailyRange).map(day => ({
+      date: format(day, 'yyyy-MM-dd'),
+      timestamp: day.getTime(),
+      clicks: dailyData.get(day.getTime()) || 0
+    }));
+
+    const monthlyClicks = eachMonthOfInterval(monthlyRange).map(month => ({
+      month: format(month, 'yyyy-MM'),
+      timestamp: month.getTime(),
+      clicks: monthlyData.get(month.getTime()) || 0
+    }));
+
+    return {
+      ...basicData,
+      hourlyClicks,
+      dailyClicks,
+      monthlyClicks,
     };
   };
 
@@ -624,15 +747,6 @@ export default function Analytics() {
             </span>
           </div>
 
-          <div className="mb-8">
-            <h2 className="text-4xl font-bold mb-1 dark:text-white">0</h2>
-            <p className="text-gray-600 dark:text-gray-400">Clicks</p>
-          </div>
-
-          <div className="h-[300px] bg-gray-50 dark:bg-gray-800 rounded-lg mb-8 border border-gray-200 dark:border-gray-700">
-            {/* Chart component would go here */}
-          </div>
-
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
             {selectedFilters['link'] ? (
               loading ? (
@@ -646,14 +760,59 @@ export default function Analytics() {
                     <p className="text-4xl font-bold">{statistics.total_clicks}</p>
                   </div>
                   
-                  <ChartCard title="Clicks Over Time">
-                    <LineChart
-                      data={prepareChartData()?.dailyClicks || []}
-                      xKey="date"
-                      yKey="clicks"
-                      theme={theme}
-                    />
-                  </ChartCard>
+                  <div className="col-span-2">
+                    <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
+                      <div className="flex gap-4 mb-4">
+                        <button
+                          className={`px-3 py-1 rounded-md ${activeTimeRange === 'hourly' ? 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-100' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
+                          onClick={() => setActiveTimeRange('hourly')}
+                        >
+                          Hourly
+                        </button>
+                        <button
+                          className={`px-3 py-1 rounded-md ${activeTimeRange === 'daily' ? 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-100' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
+                          onClick={() => setActiveTimeRange('daily')}
+                        >
+                          Daily
+                        </button>
+                        <button
+                          className={`px-3 py-1 rounded-md ${activeTimeRange === 'monthly' ? 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-100' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
+                          onClick={() => setActiveTimeRange('monthly')}
+                        >
+                          Monthly
+                        </button>
+                      </div>
+                      <div className="h-[300px]">
+                        {activeTimeRange === 'hourly' && (
+                          <LineChart
+                            data={prepareChartData()?.hourlyClicks || []}
+                            xKey="time"
+                            yKey="clicks"
+                            theme={theme}
+                            type="hourly"
+                          />
+                        )}
+                        {activeTimeRange === 'daily' && (
+                          <LineChart
+                            data={prepareChartData()?.dailyClicks || []}
+                            xKey="date"
+                            yKey="clicks"
+                            theme={theme}
+                            type="daily"
+                          />
+                        )}
+                        {activeTimeRange === 'monthly' && (
+                          <LineChart
+                            data={prepareChartData()?.monthlyClicks || []}
+                            xKey="month"
+                            yKey="clicks"
+                            theme={theme}
+                            type="monthly"
+                          />
+                        )}
+                      </div>
+                    </div>
+                  </div>
 
                   <ChartCard title="Devices">
                     <PieChart
@@ -683,12 +842,28 @@ export default function Analytics() {
                     />
                   </ChartCard>
 
-                  <ChartCard title="Subpaths">
-                    <PieChart
-                      data={prepareChartData()?.subpaths || []}
-                      theme={theme}
-                    />
-                  </ChartCard>
+                  <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
+                    <h3 className="text-lg font-semibold mb-4">Subpaths</h3>
+                    {prepareChartData()?.subpaths.length === 0 ? (
+                      <div className="text-gray-500 dark:text-gray-400">No data available</div>
+                    ) : (
+                      <div className="space-y-2">
+                        {prepareChartData()?.subpaths.map((item, index) => (
+                          <div 
+                            key={index}
+                            className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-md"
+                          >
+                            <span className="text-gray-700 dark:text-gray-200 font-medium">
+                              {item.name}
+                            </span>
+                            <span className="text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-600 px-2 py-1 rounded">
+                              {item.value} clicks
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </>
               ) : (
                 <div className="col-span-2 text-center text-gray-500 dark:text-gray-400">
