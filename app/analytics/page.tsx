@@ -71,6 +71,11 @@ export default function Analytics() {
     devices: 'Devices',
     referrers: 'Referrers'
   });
+  const [selectedFilters, setSelectedFilters] = useState<{
+    domain?: FilterOption;
+    link?: FilterOption;
+    tag?: FilterOption;
+  }>({});
 
   const fetchResources = async () => {
     try {
@@ -170,8 +175,21 @@ export default function Analytics() {
     }))
   };
 
-  const handleOptionSelect = (option: FilterOption) => {
-    console.log('Selected:', option);
+  const handleOptionSelect = (option: FilterOption, filterType?: 'domain' | 'link' | 'tag') => {
+    setSelectedFilters(prev => {
+      const newFilters = { ...prev };
+      const type = filterType || activeFilter;
+      
+      // 如果已经选中，则取消选中
+      if (prev[type] && prev[type]?.id === option.id) {
+        delete newFilters[type];
+      } else {
+        // 否则更新选中项
+        newFilters[type] = option;
+      }
+      
+      return newFilters;
+    });
   };
 
   const handleRangeSelect = (range: typeof timeRanges[0]) => {
@@ -277,23 +295,28 @@ export default function Analytics() {
                         Loading...
                       </div>
                     ) : (
-                      filterOptions[activeFilter].map((option) => (
-                        <Menu.Item key={option.id}>
-                          {({ active }) => (
-                            <button
-                              className={`${
-                                active
-                                  ? 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white'
-                                  : 'text-gray-700 dark:text-gray-200'
-                              } group flex w-full items-center px-3 py-2 text-sm rounded-md`}
-                              onClick={() => handleOptionSelect(option)}
-                            >
-                              <span className="w-4 h-4 mr-3 text-gray-400">⭕</span>
-                              {option.value}
-                            </button>
-                          )}
-                        </Menu.Item>
-                      ))
+                      filterOptions[activeFilter].map((option) => {
+                        const isSelected = selectedFilters[activeFilter]?.id === option.id;
+                        return (
+                          <Menu.Item key={option.id}>
+                            {({ active }) => (
+                              <button
+                                className={`${
+                                  active
+                                    ? 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white'
+                                    : 'text-gray-700 dark:text-gray-200'
+                                } group flex w-full items-center px-3 py-2 text-sm rounded-md`}
+                                onClick={() => handleOptionSelect(option)}
+                              >
+                                <span className="w-4 h-4 mr-3 text-gray-400">
+                                  {isSelected ? '✓' : '⭕'}
+                                </span>
+                                {option.value}
+                              </button>
+                            )}
+                          </Menu.Item>
+                        );
+                      })
                     )}
                     {!loading && filterOptions[activeFilter].length === 0 && (
                       <div className="px-4 py-2 text-gray-500 dark:text-gray-400">
@@ -304,6 +327,24 @@ export default function Analytics() {
                 </div>
               </Menu.Items>
             </Menu>
+
+            {/* Selected Filters */}
+            <div className="flex flex-wrap gap-2">
+              {Object.entries(selectedFilters).map(([type, filter]) => (
+                <div
+                  key={filter.id}
+                  className="flex items-center gap-1 px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-100 rounded-md text-sm"
+                >
+                  <span className="capitalize">{type}: {filter.value}</span>
+                  <button
+                    onClick={() => handleOptionSelect(filter, type as 'domain' | 'link' | 'tag')}
+                    className="ml-1 text-blue-600 dark:text-blue-300 hover:text-blue-800 dark:hover:text-blue-100"
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+            </div>
 
             <Menu as="div" className="relative">
               <Menu.Button className="px-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 dark:text-white inline-flex items-center">
