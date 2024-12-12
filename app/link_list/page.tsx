@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase'
 import { ThemeToggle } from '@/components/ThemeToggle'
+import { useRouter } from 'next/navigation'
 
 interface Resource {
   id: string;
@@ -27,6 +28,14 @@ export default function LinkList() {
   const [resources, setResources] = useState<Resource[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const router = useRouter()
+
+  const handleLinkClick = (resource: Resource) => {
+    // 将资源数据存储到 localStorage
+    localStorage.setItem('linkDetail', JSON.stringify(resource));
+    // 跳转到详情页
+    router.push(`/link/${resource.id}`);
+  };
 
   useEffect(() => {
     const fetchResources = async () => {
@@ -109,7 +118,11 @@ export default function LinkList() {
         )}
         <div className="grid grid-cols-1 gap-4">
           {resources.map((resource) => (
-            <div key={resource.id} className="flex items-center space-x-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+            <div 
+              key={resource.id} 
+              className="flex items-center space-x-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer transition-colors"
+              onClick={() => handleLinkClick(resource)}
+            >
               <div className="w-8 h-8 bg-gray-200 dark:bg-gray-700 rounded flex items-center justify-center">
                 {resource.attributes.icon ? (
                   <img src={resource.attributes.icon} alt="" className="w-6 h-6" />

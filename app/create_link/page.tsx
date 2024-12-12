@@ -197,6 +197,42 @@ export default function CreateLink() {
     fetchTags();
   }, [team?.id]);
 
+  const getSlugSuggestion = async (domain: string) => {
+    try {
+      const supabase = createClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token || !process.env.NEXT_PUBLIC_API_URL) {
+        return;
+      }
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/resource/shorturl/slug?domain=${domain}`, {
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to get slug suggestion');
+      }
+
+      const data = await response.json();
+      setShortUrl(data.slug);
+    } catch (error) {
+      console.error('Error getting slug suggestion:', error);
+    }
+  };
+
+  const debouncedGetSlug = useCallback(
+    debounce((domain: string) => getSlugSuggestion(domain), 500),
+    []
+  );
+
+  useEffect(() => {
+    if (longUrl) {
+      debouncedGetSlug('upj.to');
+    }
+  }, [longUrl]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrors({});
@@ -368,7 +404,7 @@ export default function CreateLink() {
                 value={shortUrl}
                 onChange={(e) => setShortUrl(e.target.value)}
                 className="w-full p-2 border dark:border-gray-600 rounded-r-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-                placeholder="Enter short URL"
+                placeholder="输入或等待自动生成"
                 required
               />
             </div>
