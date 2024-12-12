@@ -133,9 +133,20 @@ export default function LinkList() {
                 )}
               </div>
               <div className="flex-1">
-                <h3 className="text-lg font-medium text-gray-900 dark:text-white">
-                  {resource.attributes.title}
-                </h3>
+                <div className="flex justify-between items-start">
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+                    {resource.attributes.title}
+                  </h3>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      router.push(`/analytics?url=${encodeURIComponent(resource.attributes.shortUrl)}`);
+                    }}
+                    className="px-3 py-1 text-sm bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-100 rounded-md hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors"
+                  >
+                    统计分析
+                  </button>
+                </div>
                 <div className="flex items-center space-x-2">
                   <a 
                     href={resource.attributes.shortUrl} 

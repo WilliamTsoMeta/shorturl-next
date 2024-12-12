@@ -218,7 +218,7 @@ export default function Analytics() {
   const [isCustomRange, setIsCustomRange] = useState(false);
   const [dateRange, setDateRange] = useState<[Date | null, Date | null]>([new Date(), new Date()]);
   const [startDate, endDate] = dateRange;
-  const [activeFilter, setActiveFilter] = useState<'domain' | 'link' | 'tag'>('domain');
+  const [activeFilter, setActiveFilter] = useState<'domain' | 'link' | 'tag'>('link');
   const [resources, setResources] = useState<Resource[]>([]);
   const [tags, setTags] = useState<Tag[]>([]);
   const [loading, setLoading] = useState(false);
@@ -229,6 +229,38 @@ export default function Analytics() {
   }>({});
   const [statistics, setStatistics] = useState<StatisticsResponse | null>(null);
   const [activeTimeRange, setActiveTimeRange] = useState<'hourly' | 'daily' | 'monthly'>('daily');
+
+  useEffect(() => {
+    if (activeFilter === 'link') {
+      fetchResources();
+    } else if (activeFilter === 'tag') {
+      fetchTags();
+    }
+  }, [activeFilter, team?.id]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const shortUrl = params.get('url');
+    
+    if (shortUrl && resources.length > 0) {
+      // Find the resource with matching shortUrl
+      const resource = resources.find(r => r.attributes.shortUrl === decodeURIComponent(shortUrl));
+      if (resource) {
+        // Set the filter to this link
+        const filter = {
+          id: resource.id,
+          type: 'link' as const,
+          value: resource.attributes.shortUrl
+        };
+        setSelectedFilters(prev => ({
+          ...prev,
+          link: filter
+        }));
+        // Immediately fetch statistics for this link
+        fetchStatistics(filter);
+      }
+    }
+  }, [resources]);
 
   const fetchResources = async () => {
     try {
@@ -304,7 +336,7 @@ export default function Analytics() {
     }
   };
 
-  const fetchStatistics = async () => {
+  const fetchStatistics = async (selectedLink?: FilterOption) => {
     try {
       setLoading(true);
       const supabase = createClient();
@@ -315,8 +347,8 @@ export default function Analytics() {
         return;
       }
 
-      const selectedResource = selectedFilters['link'];
-      if (!selectedResource) return;
+      const linkToUse = selectedLink || selectedFilters['link'];
+      if (!linkToUse) return;
 
       // 转换开始时间为 UTC
       const utcStartDate = startDate 
@@ -350,8 +382,8 @@ export default function Analytics() {
           'Authorization': `Bearer ${session.access_token}`,
         },
         body: JSON.stringify({
-          shortUrlId: selectedResource.id,
-          url: selectedResource.value,
+          shortUrlId: linkToUse.id,
+          url: linkToUse.value,
           startDate: utcStartDate,
           endDate: utcEndDate,
         }),
@@ -371,15 +403,9 @@ export default function Analytics() {
   };
 
   useEffect(() => {
-    if (activeFilter === 'link') {
-      fetchResources();
-    } else if (activeFilter === 'tag') {
-      fetchTags();
+    if (selectedFilters['link']) {
+      fetchStatistics();
     }
-  }, [activeFilter, team?.id]);
-
-  useEffect(() => {
-    fetchStatistics();
   }, [selectedFilters['link'], startDate, endDate]);
 
   const filterOptions: Record<string, FilterOption[]> = {
