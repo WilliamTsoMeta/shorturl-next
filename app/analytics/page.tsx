@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import { useTheme } from 'next-themes';
 import { Menu, Transition } from '@headlessui/react';
+import DatePicker from 'react-datepicker';
+import "react-datepicker/dist/react-datepicker.css";
 import { format, subDays, startOfYear } from 'date-fns';
 
 const timeRanges = [
@@ -18,13 +20,12 @@ const timeRanges = [
 export default function Analytics() {
   const { theme } = useTheme();
   const [selectedRange, setSelectedRange] = useState(timeRanges[0]);
-  const [dateRange, setDateRange] = useState(() => {
-    const end = new Date();
-    const start = subDays(end, 1);
-    return { start, end };
-  });
+  const [isCustomRange, setIsCustomRange] = useState(false);
+  const [dateRange, setDateRange] = useState<[Date | null, Date | null]>([new Date(), new Date()]);
+  const [startDate, endDate] = dateRange;
 
   const handleRangeSelect = (range: typeof timeRanges[0]) => {
+    setIsCustomRange(false);
     const end = new Date();
     let start = new Date();
 
@@ -36,7 +37,7 @@ export default function Analytics() {
       start = subDays(end, range.days);
     }
 
-    setDateRange({ start, end });
+    setDateRange([start, end]);
     setSelectedRange(range);
   };
 
@@ -99,7 +100,7 @@ export default function Analytics() {
             
             <Menu as="div" className="relative">
               <Menu.Button className="px-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 dark:text-white inline-flex items-center">
-                <span>{selectedRange.label}</span>
+                <span>{isCustomRange ? 'Custom Range' : selectedRange.label}</span>
                 <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
@@ -113,31 +114,63 @@ export default function Analytics() {
                 leaveFrom="transform scale-100 opacity-100"
                 leaveTo="transform scale-95 opacity-0"
               >
-                <Menu.Items className="absolute right-0 mt-2 w-56 origin-top-right bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg focus:outline-none">
-                  <div className="py-1">
-                    {timeRanges.map((range) => (
-                      <Menu.Item key={range.label}>
-                        {({ active }) => (
-                          <button
-                            onClick={() => handleRangeSelect(range)}
-                            className={`${
-                              active
-                                ? 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white'
-                                : 'text-gray-700 dark:text-gray-200'
-                            } group flex w-full items-center px-4 py-2 text-sm`}
-                          >
-                            {range.label}
-                          </button>
-                        )}
-                      </Menu.Item>
-                    ))}
+                <Menu.Items className="absolute left-0 mt-2 origin-top-left bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg focus:outline-none min-w-[800px]">
+                  <div className="grid grid-cols-[300px_1fr] gap-4 p-4">
+                    <div className="space-y-2 border-r border-gray-200 dark:border-gray-700 pr-4">
+                      <h3 className="text-sm font-medium text-gray-900 dark:text-white px-4 mb-2">Select Range</h3>
+                      {timeRanges.map((range) => (
+                        <Menu.Item key={range.label}>
+                          {({ active }) => (
+                            <button
+                              onClick={() => handleRangeSelect(range)}
+                              className={`${
+                                active
+                                  ? 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white'
+                                  : 'text-gray-700 dark:text-gray-200'
+                              } group flex w-full items-center px-4 py-2.5 text-sm rounded-md ${
+                                selectedRange.label === range.label && !isCustomRange
+                                  ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'
+                                  : ''
+                              }`}
+                            >
+                              {range.label}
+                            </button>
+                          )}
+                        </Menu.Item>
+                      ))}
+                    </div>
+                    <div className="flex justify-center">
+                      <DatePicker
+                        selectsRange={true}
+                        startDate={startDate}
+                        endDate={endDate}
+                        onChange={(update) => {
+                          setDateRange(update);
+                          if (update[0] && update[1]) {
+                            setIsCustomRange(true);
+                          }
+                        }}
+                        monthsShown={2}
+                        inline
+                        calendarClassName="dark:bg-gray-800 dark:text-white"
+                        dayClassName={(date) => 
+                          "dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+                        }
+                      />
+                    </div>
                   </div>
                 </Menu.Items>
               </Transition>
             </Menu>
 
             <span className="flex items-center px-2 dark:text-gray-200">
-              {format(dateRange.start, 'MMM dd, yyyy')} - {format(dateRange.end, 'MMM dd, yyyy')}
+              {startDate && endDate ? (
+                <>
+                  {format(startDate, 'MMM dd, yyyy')} - {format(endDate, 'MMM dd, yyyy')}
+                </>
+              ) : (
+                'Select date range'
+              )}
             </span>
           </div>
 
