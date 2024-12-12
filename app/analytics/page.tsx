@@ -62,7 +62,6 @@ export default function Analytics() {
   const [dateRange, setDateRange] = useState<[Date | null, Date | null]>([new Date(), new Date()]);
   const [startDate, endDate] = dateRange;
   const [activeFilter, setActiveFilter] = useState<'domain' | 'link' | 'tag'>('domain');
-  const [searchTerm, setSearchTerm] = useState('');
   const [resources, setResources] = useState<Resource[]>([]);
   const [tags, setTags] = useState<Tag[]>([]);
   const [loading, setLoading] = useState(false);
@@ -239,92 +238,71 @@ export default function Analytics() {
 
           <div className="flex gap-2 bg-gray-50 dark:bg-gray-700 p-3 rounded-md mb-6">
             <Menu as="div" className="relative">
-              <Menu.Button className="px-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 dark:text-white inline-flex items-center">
-                <span>Filter</span>
-                <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              <Menu.Button className="inline-flex w-full justify-between gap-x-1.5 rounded-md bg-white dark:bg-gray-800 px-3 py-2 text-sm font-semibold text-gray-900 dark:text-gray-100 shadow-sm ring-1 ring-inset ring-gray-300 dark:ring-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700">
+                {activeFilter === 'domain' ? 'Domain' : activeFilter === 'link' ? 'Link' : 'Tag'}
+                <svg className="-mr-1 h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clipRule="evenodd" />
                 </svg>
               </Menu.Button>
 
-              <Transition
-                enter="transition duration-100 ease-out"
-                enterFrom="transform scale-95 opacity-0"
-                enterTo="transform scale-100 opacity-100"
-                leave="transition duration-75 ease-out"
-                leaveFrom="transform scale-100 opacity-100"
-                leaveTo="transform scale-95 opacity-0"
-              >
-                <Menu.Items className="absolute left-0 mt-2 w-[280px] origin-top-left bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg focus:outline-none">
-                  <div className="p-2">
-                    {/* Filter Type Tabs */}
-                    <div className="flex gap-1 mb-2 border-b border-gray-200 dark:border-gray-700">
-                      {(['domain', 'link', 'tag'] as const).map((type) => (
-                        <button
-                          key={type}
-                          onClick={() => {
-                            setActiveFilter(type);
-                            setSearchTerm('');
-                          }}
-                          className={`px-3 py-2 text-sm rounded-t-md ${
-                            activeFilter === type
-                              ? 'text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400'
-                              : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
-                          }`}
-                        >
-                          {type.charAt(0).toUpperCase() + type.slice(1)}
-                        </button>
-                      ))}
-                    </div>
-
-                    {/* Search Input */}
-                    <div className="relative mb-2">
-                      <input
-                        type="text"
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        placeholder={`Search ${activeFilter}...`}
-                        className="w-full px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-md bg-gray-50 dark:bg-gray-900 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400"
-                      />
-                    </div>
-
-                    {/* Options List */}
-                    <div className="max-h-[240px] overflow-y-auto">
-                      {loading ? (
-                        <div className="px-4 py-2 text-gray-500 dark:text-gray-400">
-                          Loading...
-                        </div>
-                      ) : (
-                        filterOptions[activeFilter].filter(option =>
-                          option.value.toLowerCase().includes(searchTerm.toLowerCase())
-                        ).map((option) => (
-                          <Menu.Item key={option.id}>
-                            {({ active }) => (
-                              <button
-                                className={`${
-                                  active
-                                    ? 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white'
-                                    : 'text-gray-700 dark:text-gray-200'
-                                } group flex w-full items-center px-3 py-2 text-sm rounded-md`}
-                                onClick={() => handleOptionSelect(option)}
-                              >
-                                <span className="w-4 h-4 mr-3 text-gray-400">⭕</span>
-                                {option.value}
-                              </button>
-                            )}
-                          </Menu.Item>
-                        ))
-                      )}
-                      {!loading && filterOptions[activeFilter].filter(option =>
-                        option.value.toLowerCase().includes(searchTerm.toLowerCase())
-                      ).length === 0 && (
-                        <div className="px-4 py-2 text-gray-500 dark:text-gray-400">
-                          No results found
-                        </div>
-                      )}
+              <Menu.Items className="absolute right-0 z-10 mt-2 w-56 origin-top-right rounded-md bg-white dark:bg-gray-800 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+                <div className="py-1">
+                  <div className="flex flex-col">
+                    <div className="px-4 py-2 flex gap-2">
+                      <button
+                        className={`flex-1 px-3 py-1 rounded-md ${activeFilter === 'domain' ? 'bg-gray-100 dark:bg-gray-700' : 'hover:bg-gray-50 dark:hover:bg-gray-700'}`}
+                        onClick={() => setActiveFilter('domain')}
+                      >
+                        Domain
+                      </button>
+                      <button
+                        className={`flex-1 px-3 py-1 rounded-md ${activeFilter === 'link' ? 'bg-gray-100 dark:bg-gray-700' : 'hover:bg-gray-50 dark:hover:bg-gray-700'}`}
+                        onClick={() => setActiveFilter('link')}
+                      >
+                        Link
+                      </button>
+                      <button
+                        className={`flex-1 px-3 py-1 rounded-md ${activeFilter === 'tag' ? 'bg-gray-100 dark:bg-gray-700' : 'hover:bg-gray-50 dark:hover:bg-gray-700'}`}
+                        onClick={() => setActiveFilter('tag')}
+                      >
+                        Tag
+                      </button>
                     </div>
                   </div>
-                </Menu.Items>
-              </Transition>
+
+                  {/* Options List */}
+                  <div className="max-h-[240px] overflow-y-auto">
+                    {loading ? (
+                      <div className="px-4 py-2 text-gray-500 dark:text-gray-400">
+                        Loading...
+                      </div>
+                    ) : (
+                      filterOptions[activeFilter].map((option) => (
+                        <Menu.Item key={option.id}>
+                          {({ active }) => (
+                            <button
+                              className={`${
+                                active
+                                  ? 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white'
+                                  : 'text-gray-700 dark:text-gray-200'
+                              } group flex w-full items-center px-3 py-2 text-sm rounded-md`}
+                              onClick={() => handleOptionSelect(option)}
+                            >
+                              <span className="w-4 h-4 mr-3 text-gray-400">⭕</span>
+                              {option.value}
+                            </button>
+                          )}
+                        </Menu.Item>
+                      ))
+                    )}
+                    {!loading && filterOptions[activeFilter].length === 0 && (
+                      <div className="px-4 py-2 text-gray-500 dark:text-gray-400">
+                        No results found
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </Menu.Items>
             </Menu>
 
             <Menu as="div" className="relative">
