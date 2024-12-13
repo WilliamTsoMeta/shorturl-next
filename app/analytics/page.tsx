@@ -229,6 +229,7 @@ export default function Analytics() {
   }>({});
   const [statistics, setStatistics] = useState<StatisticsResponse | null>(null);
   const [activeTimeRange, setActiveTimeRange] = useState<'hourly' | 'daily' | 'monthly'>('daily');
+  const [activeView, setActiveView] = useState<'stats' | 'events'>('stats');
 
   useEffect(() => {
     if (activeFilter === 'link') {
@@ -596,10 +597,16 @@ export default function Analytics() {
           <div className="flex justify-between items-center mb-5">
             <h1 className="text-2xl font-bold dark:text-white">Analytics</h1>
             <div className="space-x-2">
-              <button className="px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-md hover:bg-gray-50 dark:hover:bg-gray-800 dark:text-white">
-                Share
+              <button 
+                className={`px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-md hover:bg-gray-50 dark:hover:bg-gray-800 dark:text-white ${activeView === 'stats' ? 'bg-gray-100 dark:bg-gray-700' : ''}`}
+                onClick={() => setActiveView('stats')}
+              >
+                Switch to Stats
               </button>
-              <button className="px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-md hover:bg-gray-50 dark:hover:bg-gray-800 dark:text-white">
+              <button 
+                className={`px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-md hover:bg-gray-50 dark:hover:bg-gray-800 dark:text-white ${activeView === 'events' ? 'bg-gray-100 dark:bg-gray-700' : ''}`}
+                onClick={() => setActiveView('events')}
+              >
                 Switch to Events
               </button>
             </div>
@@ -774,131 +781,157 @@ export default function Analytics() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-            {selectedFilters['link'] ? (
-              loading ? (
-                <div className="col-span-2 flex justify-center items-center h-64">
-                  <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900"></div>
-                </div>
-              ) : statistics ? (
-                <>
-                  <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
-                    <h3 className="text-lg font-semibold mb-4">Total Clicks</h3>
-                    <p className="text-4xl font-bold">{statistics.total_clicks}</p>
+            {activeView === 'stats' ? (
+              selectedFilters['link'] ? (
+                loading ? (
+                  <div className="col-span-2 flex justify-center items-center h-64">
+                    <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900"></div>
                   </div>
-                  
-                  <div className="col-span-2">
+                ) : statistics ? (
+                  <>
                     <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
-                      <div className="flex gap-4 mb-4">
-                        <button
-                          className={`px-3 py-1 rounded-md ${activeTimeRange === 'hourly' ? 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-100' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
-                          onClick={() => setActiveTimeRange('hourly')}
-                        >
-                          Hourly
-                        </button>
-                        <button
-                          className={`px-3 py-1 rounded-md ${activeTimeRange === 'daily' ? 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-100' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
-                          onClick={() => setActiveTimeRange('daily')}
-                        >
-                          Daily
-                        </button>
-                        <button
-                          className={`px-3 py-1 rounded-md ${activeTimeRange === 'monthly' ? 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-100' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
-                          onClick={() => setActiveTimeRange('monthly')}
-                        >
-                          Monthly
-                        </button>
-                      </div>
-                      <div className="h-[300px]">
-                        {activeTimeRange === 'hourly' && (
-                          <LineChart
-                            data={prepareChartData()?.hourlyClicks || []}
-                            xKey="time"
-                            yKey="clicks"
-                            theme={theme}
-                            type="hourly"
-                          />
-                        )}
-                        {activeTimeRange === 'daily' && (
-                          <LineChart
-                            data={prepareChartData()?.dailyClicks || []}
-                            xKey="date"
-                            yKey="clicks"
-                            theme={theme}
-                            type="daily"
-                          />
-                        )}
-                        {activeTimeRange === 'monthly' && (
-                          <LineChart
-                            data={prepareChartData()?.monthlyClicks || []}
-                            xKey="month"
-                            yKey="clicks"
-                            theme={theme}
-                            type="monthly"
-                          />
-                        )}
+                      <h3 className="text-lg font-semibold mb-4">Total Clicks</h3>
+                      <p className="text-4xl font-bold">{statistics.total_clicks}</p>
+                    </div>
+                    
+                    <div className="col-span-2">
+                      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
+                        <div className="flex gap-4 mb-4">
+                          <button
+                            className={`px-3 py-1 rounded-md ${activeTimeRange === 'hourly' ? 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-100' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
+                            onClick={() => setActiveTimeRange('hourly')}
+                          >
+                            Hourly
+                          </button>
+                          <button
+                            className={`px-3 py-1 rounded-md ${activeTimeRange === 'daily' ? 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-100' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
+                            onClick={() => setActiveTimeRange('daily')}
+                          >
+                            Daily
+                          </button>
+                          <button
+                            className={`px-3 py-1 rounded-md ${activeTimeRange === 'monthly' ? 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-100' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
+                            onClick={() => setActiveTimeRange('monthly')}
+                          >
+                            Monthly
+                          </button>
+                        </div>
+                        <div className="h-[300px]">
+                          {activeTimeRange === 'hourly' && (
+                            <LineChart
+                              data={prepareChartData()?.hourlyClicks || []}
+                              xKey="time"
+                              yKey="clicks"
+                              theme={theme}
+                              type="hourly"
+                            />
+                          )}
+                          {activeTimeRange === 'daily' && (
+                            <LineChart
+                              data={prepareChartData()?.dailyClicks || []}
+                              xKey="date"
+                              yKey="clicks"
+                              theme={theme}
+                              type="daily"
+                            />
+                          )}
+                          {activeTimeRange === 'monthly' && (
+                            <LineChart
+                              data={prepareChartData()?.monthlyClicks || []}
+                              xKey="month"
+                              yKey="clicks"
+                              theme={theme}
+                              type="monthly"
+                            />
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  <ChartCard title="Devices">
-                    <PieChart
-                      data={prepareChartData()?.devices || []}
-                      theme={theme}
-                    />
-                  </ChartCard>
+                    <ChartCard title="Devices">
+                      <PieChart
+                        data={prepareChartData()?.devices || []}
+                        theme={theme}
+                      />
+                    </ChartCard>
 
-                  <ChartCard title="Browsers">
-                    <PieChart
-                      data={prepareChartData()?.browsers || []}
-                      theme={theme}
-                    />
-                  </ChartCard>
+                    <ChartCard title="Browsers">
+                      <PieChart
+                        data={prepareChartData()?.browsers || []}
+                        theme={theme}
+                      />
+                    </ChartCard>
 
-                  <ChartCard title="Operating Systems">
-                    <PieChart
-                      data={prepareChartData()?.os || []}
-                      theme={theme}
-                    />
-                  </ChartCard>
+                    <ChartCard title="Operating Systems">
+                      <PieChart
+                        data={prepareChartData()?.os || []}
+                        theme={theme}
+                      />
+                    </ChartCard>
 
-                  <ChartCard title="Referrers">
-                    <PieChart
-                      data={prepareChartData()?.referrers || []}
-                      theme={theme}
-                    />
-                  </ChartCard>
+                    <ChartCard title="Referrers">
+                      <PieChart
+                        data={prepareChartData()?.referrers || []}
+                        theme={theme}
+                      />
+                    </ChartCard>
 
-                  <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
-                    <h3 className="text-lg font-semibold mb-4">Subpaths</h3>
-                    {prepareChartData()?.subpaths.length === 0 ? (
-                      <div className="text-gray-500 dark:text-gray-400">No data available</div>
-                    ) : (
-                      <div className="space-y-2">
-                        {prepareChartData()?.subpaths.map((item, index) => (
-                          <div 
-                            key={index}
-                            className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-md"
-                          >
-                            <span className="text-gray-700 dark:text-gray-200 font-medium">
-                              {item.name}
-                            </span>
-                            <span className="text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-600 px-2 py-1 rounded">
-                              {item.value} clicks
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </>
+                    <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
+                      <h3 className="text-lg font-semibold mb-4">Subpaths</h3>
+                      {prepareChartData()?.subpaths.length === 0 ? (
+                        <div className="text-gray-500 dark:text-gray-400">No data available</div>
+                      ) : (
+                        <div className="space-y-2">
+                          {prepareChartData()?.subpaths.map((item, index) => (
+                            <div 
+                              key={index}
+                              className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-md"
+                            >
+                              <span className="text-gray-700 dark:text-gray-200 font-medium">
+                                {item.name}
+                              </span>
+                              <span className="text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-600 px-2 py-1 rounded">
+                                {item.value} clicks
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </>
+                ) : null
               ) : (
                 <div className="col-span-2 text-center text-gray-500 dark:text-gray-400">
-                  No data available
+                  Select a link to view statistics
                 </div>
               )
             ) : (
-              <div className="col-span-2 text-center text-gray-500 dark:text-gray-400">
-                Please select a link to view analytics
+              // Events view
+              <div className="col-span-2">
+                <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
+                  <h3 className="text-lg font-semibold mb-4">Click Events</h3>
+                  {statistics?.user_actions ? (
+                    <div className="space-y-4">
+                      {statistics.user_actions.map((action, index) => (
+                        <div key={index} className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <p className="text-sm text-gray-500 dark:text-gray-400">User ID: {action.user_id}</p>
+                              <p className="text-sm text-gray-500 dark:text-gray-400">Action: {action.action}</p>
+                            </div>
+                            <p className="text-sm text-gray-500 dark:text-gray-400">
+                              {new Date(action.action_time).toLocaleString()}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center text-gray-500 dark:text-gray-400">
+                      No events available
+                    </div>
+                  )}
+                </div>
               </div>
             )}
           </div>
