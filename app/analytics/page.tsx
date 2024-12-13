@@ -10,6 +10,7 @@ import { createClient } from '@/lib/supabase';
 import { useTeam } from '@/lib/contexts/TeamContext';
 import { LineChart as RechartsLineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPieChart, Pie, Cell } from 'recharts';
 import { Header } from '@/components/Header';
+import toast from 'react-hot-toast';
 
 interface Resource {
   id: string;
@@ -231,6 +232,65 @@ export default function Analytics() {
   const [statistics, setStatistics] = useState<StatisticsResponse | null>(null);
   const [activeTimeRange, setActiveTimeRange] = useState<'hourly' | 'daily' | 'monthly'>('daily');
   const [activeView, setActiveView] = useState<'stats' | 'events'>('stats');
+
+  const handleSendToSlide = async () => {
+    if (statistics) {
+      try {
+        const supabase = createClient();
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (!session?.user?.id) {
+          throw new Error('No user session found');
+        }
+  
+        // Transform statistics into SlideContentDto format
+        const slideContent = {
+          slideId: undefined,
+          title: "Analytics Report",
+          pages: [
+            {
+              page: 0,
+              content: [
+                {
+                  type: "text",
+                  value: JSON.stringify(statistics, null, 2),
+                  style: {
+                    size: { width: 600, height: 400 },
+                    position: { x: 50, y: 50 }
+                  }
+                }
+              ]
+            }
+          ]
+        };
+  
+        const body = JSON.stringify({
+          slideContent: slideContent,
+          userId: session.user.id
+        });
+        const endpoint = `${process.env.NEXT_PUBLIC_WINDMILL_SYNC}/limq_google/upsert_slide_content`;
+  
+        const response = await fetch(endpoint, {
+          method: 'POST',
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${process.env.NEXT_PUBLIC_WINDMILL}`
+          },
+          body
+        });
+  
+        const data = await response.json();
+        if (data.success) {
+          toast.success('Successfully sent to Google Slides!');
+        } else {
+          throw new Error(data.error || 'Failed to send to slide');
+        }
+      } catch (error) {
+        console.error('Error sending to slide:', error);
+        toast.error('Failed to send to Google Slides');
+      }
+    }
+  };
 
   useEffect(() => {
     if (activeFilter === 'link') {
@@ -597,22 +657,36 @@ export default function Analytics() {
       <div className="min-h-screen bg-white dark:bg-gray-900">
         <div className="max-w-7xl mx-auto p-5">
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
-            <div className="flex justify-between items-center mb-5">
-              <h1 className="text-2xl font-bold dark:text-white">Analytics</h1>
-              <div className="space-x-2">
-                <button 
-                  className={`px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-md hover:bg-gray-50 dark:hover:bg-gray-800 dark:text-white ${activeView === 'stats' ? 'bg-gray-100 dark:bg-gray-700' : ''}`}
+            <div className="flex justify-between items-center mb-4">
+              <div className="flex space-x-2">
+                <button
+                  className={`px-4 py-2 text-sm font-medium rounded-md ${
+                    activeView === 'stats'
+                      ? 'bg-blue-500 text-white'
+                      : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+                  }`}
                   onClick={() => setActiveView('stats')}
                 >
-                  Switch to Stats
+                  Statistics
                 </button>
-                <button 
-                  className={`px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-md hover:bg-gray-50 dark:hover:bg-gray-800 dark:text-white ${activeView === 'events' ? 'bg-gray-100 dark:bg-gray-700' : ''}`}
+                <button
+                  className={`px-4 py-2 text-sm font-medium rounded-md ${
+                    activeView === 'events'
+                      ? 'bg-blue-500 text-white'
+                      : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+                  }`}
                   onClick={() => setActiveView('events')}
                 >
-                  Switch to Events
+                  Events
                 </button>
               </div>
+              <button
+                onClick={handleSendToSlide}
+                className="px-4 py-2 text-sm font-medium text-white bg-green-500 rounded-md hover:bg-green-600 transition-colors"
+                disabled={!statistics}
+              >
+                Send to Slide
+              </button>
             </div>
 
             <div className="flex gap-2 bg-gray-50 dark:bg-gray-700 p-3 rounded-md mb-6">
@@ -664,7 +738,7 @@ export default function Analytics() {
                                 <button
                                   className={`${
                                     active
-                                      ? 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white'
+                                      ? 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100'
                                       : 'text-gray-700 dark:text-gray-200'
                                   } group flex w-full items-center px-3 py-2 text-sm rounded-md`}
                                   onClick={() => handleOptionSelect(option)}

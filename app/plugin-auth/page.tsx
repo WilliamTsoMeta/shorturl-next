@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useRouter } from 'next/navigation';
-import { createClient } from '@/lib/supabase';
+import { createClient, supabase } from '@/lib/supabase';
 import { Header } from '@/components/Header';
 
 const SOCIAL_ACCOUNTS = [
@@ -82,27 +82,28 @@ export default function PluginAuthPage() {
           const decodedState = JSON.parse(atob(state));
           const { platform } = decodedState;
 
-          const supabase = createClient();
-          const { data: { session } } = await supabase.auth.getSession();
-          
-          if (!session?.access_token) {
-            router.push('/login');
-            return;
-          }
+          const body = JSON.stringify({
+            state,
+            code,
+          });
 
-          const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/${platform}/callback`, {
+          const endpoint = `${process.env.NEXT_PUBLIC_WINDMILL_SYNC}/limq_${platform}/get_${platform}_token`;
+
+          const response = await fetch(endpoint, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
-              'Authorization': `Bearer ${session.access_token}`
+              Authorization: `Bearer ${process.env.NEXT_PUBLIC_WINDMILL}`,
             },
-            body: JSON.stringify({ state, code }),
+            body,
           });
 
-          if (!response.ok) {
+          const data = await response.json();
+          if (!data.success) {
             throw new Error(`Failed to exchange token for ${platform}`);
           }
 
+          // message.success(`Successfully connected to ${platform}`);
           await getDetail();
         } catch (error) {
           console.error("Auth callback error:", error);
@@ -112,32 +113,34 @@ export default function PluginAuthPage() {
     }
   }, []);
 
-  const handleConnect = async (platform: string) => {
+  const handleConnect = async (platform: string ) => {
     setLoadingStates((prev) => ({ ...prev, [platform]: true }));
     try {
       const supabase = createClient();
       const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session?.access_token) {
-        router.push('/login');
-        return;
-      }
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/${platform}/url`, {
+      const body = JSON.stringify({
+        bearerToken: session?.access_token
+      });      
+      const endpoint = `${process.env.NEXT_PUBLIC_WINDMILL_SYNC}/limq_${platform}/get_${platform}_auth_url`;
+
+      
+
+      const response = await fetch(endpoint, {
+        method: "POST",
         headers: {
-          'Authorization': `Bearer ${session.access_token}`
-        }
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${process.env.NEXT_PUBLIC_WINDMILL}`,
+        },
+        body,
       });
 
-      if (!response.ok) {
-        throw new Error("Failed to get authentication URL");
-      }
-
       const data = await response.json();
+      console.log("data", data);
       if (data?.url) {
-        window.location.href = data.url;
+        window.location.href = data?.url;
       } else {
-        throw new Error("Failed to get authentication URL");
+        throw new Error("Failed to get auth URL from Windmill");
       }
     } catch (error) {
       console.error(`Failed to get ${platform} auth URL:`, error);
