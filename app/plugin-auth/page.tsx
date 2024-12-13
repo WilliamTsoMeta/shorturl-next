@@ -33,9 +33,17 @@ export default function PluginAuthPage() {
   const getDetail = async () => {
     try {
       setPageLoading(true);
+      const supabase = createClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session?.access_token) {
+        router.push('/login');
+        return;
+      }
+
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/platform-tokens`, {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('sb-auth-token')}`
+          'Authorization': `Bearer ${session.access_token}`
         }
       });
       
@@ -60,12 +68,6 @@ export default function PluginAuthPage() {
   };
 
   useEffect(() => {
-    const client = createClient();
-    const session = client.auth.getSession();
-    if (!session) {
-      router.push('/login');
-      return;
-    }
     getDetail();
   }, []);
 
@@ -80,11 +82,19 @@ export default function PluginAuthPage() {
           const decodedState = JSON.parse(atob(state));
           const { platform } = decodedState;
 
+          const supabase = createClient();
+          const { data: { session } } = await supabase.auth.getSession();
+          
+          if (!session?.access_token) {
+            router.push('/login');
+            return;
+          }
+
           const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/${platform}/callback`, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
-              'Authorization': `Bearer ${localStorage.getItem('sb-auth-token')}`
+              'Authorization': `Bearer ${session.access_token}`
             },
             body: JSON.stringify({ state, code }),
           });
@@ -105,9 +115,17 @@ export default function PluginAuthPage() {
   const handleConnect = async (platform: string) => {
     setLoadingStates((prev) => ({ ...prev, [platform]: true }));
     try {
+      const supabase = createClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session?.access_token) {
+        router.push('/login');
+        return;
+      }
+
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/${platform}/url`, {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('sb-auth-token')}`
+          'Authorization': `Bearer ${session.access_token}`
         }
       });
 
@@ -131,10 +149,18 @@ export default function PluginAuthPage() {
   const handleRevoke = async (platform: string) => {
     setLoadingStates((prev) => ({ ...prev, [platform]: true }));
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/${platform}`, {
+      const supabase = createClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session?.access_token) {
+        router.push('/login');
+        return;
+      }
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/${platform}/auth/`, {
         method: "DELETE",
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('sb-auth-token')}`
+          'Authorization': `Bearer ${session.access_token}`
         }
       });
 
