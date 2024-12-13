@@ -104,7 +104,7 @@ export default function LinkList() {
               <select
                 value={selectedTeam || ''}
                 onChange={(e) => setSelectedTeam(e.target.value || null)}
-                className="block w-64 px-4 py-3 text-base rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 bg-white"
+                className="block w-64 px-4 pr-8 py-3 text-base rounded-lg border-gray-300 dark:border-gray-600 shadow-sm focus:border-blue-500 focus:ring-blue-500 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white"
               >
                 <option value="">All Teams</option>
                 {teams?.map((team) => (
