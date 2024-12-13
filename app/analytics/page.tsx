@@ -9,6 +9,7 @@ import { format, subDays, startOfYear, eachHourOfInterval, eachDayOfInterval, ea
 import { createClient } from '@/lib/supabase';
 import { useTeam } from '@/lib/contexts/TeamContext';
 import { LineChart as RechartsLineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPieChart, Pie, Cell } from 'recharts';
+import { Header } from '@/components/Header';
 
 interface Resource {
   id: string;
@@ -591,352 +592,355 @@ export default function Analytics() {
   );
 
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-900">
-      <div className="max-w-7xl mx-auto p-5">
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
-          <div className="flex justify-between items-center mb-5">
-            <h1 className="text-2xl font-bold dark:text-white">Analytics</h1>
-            <div className="space-x-2">
-              <button 
-                className={`px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-md hover:bg-gray-50 dark:hover:bg-gray-800 dark:text-white ${activeView === 'stats' ? 'bg-gray-100 dark:bg-gray-700' : ''}`}
-                onClick={() => setActiveView('stats')}
-              >
-                Switch to Stats
-              </button>
-              <button 
-                className={`px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-md hover:bg-gray-50 dark:hover:bg-gray-800 dark:text-white ${activeView === 'events' ? 'bg-gray-100 dark:bg-gray-700' : ''}`}
-                onClick={() => setActiveView('events')}
-              >
-                Switch to Events
-              </button>
+    <>
+      <Header />
+      <div className="min-h-screen bg-white dark:bg-gray-900">
+        <div className="max-w-7xl mx-auto p-5">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
+            <div className="flex justify-between items-center mb-5">
+              <h1 className="text-2xl font-bold dark:text-white">Analytics</h1>
+              <div className="space-x-2">
+                <button 
+                  className={`px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-md hover:bg-gray-50 dark:hover:bg-gray-800 dark:text-white ${activeView === 'stats' ? 'bg-gray-100 dark:bg-gray-700' : ''}`}
+                  onClick={() => setActiveView('stats')}
+                >
+                  Switch to Stats
+                </button>
+                <button 
+                  className={`px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-md hover:bg-gray-50 dark:hover:bg-gray-800 dark:text-white ${activeView === 'events' ? 'bg-gray-100 dark:bg-gray-700' : ''}`}
+                  onClick={() => setActiveView('events')}
+                >
+                  Switch to Events
+                </button>
+              </div>
             </div>
-          </div>
 
-          <div className="flex gap-2 bg-gray-50 dark:bg-gray-700 p-3 rounded-md mb-6">
-            <Menu as="div" className="relative">
-              <Menu.Button className="inline-flex w-full justify-between gap-x-1.5 rounded-md bg-white dark:bg-gray-800 px-3 py-2 text-sm font-semibold text-gray-900 dark:text-gray-100 shadow-sm ring-1 ring-inset ring-gray-300 dark:ring-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700">
-                {activeFilter === 'domain' ? 'Domain' : activeFilter === 'link' ? 'Link' : 'Tag'}
-                <svg className="-mr-1 h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clipRule="evenodd" />
-                </svg>
-              </Menu.Button>
+            <div className="flex gap-2 bg-gray-50 dark:bg-gray-700 p-3 rounded-md mb-6">
+              <Menu as="div" className="relative">
+                <Menu.Button className="inline-flex w-full justify-between gap-x-1.5 rounded-md bg-white dark:bg-gray-800 px-3 py-2 text-sm font-semibold text-gray-900 dark:text-gray-100 shadow-sm ring-1 ring-inset ring-gray-300 dark:ring-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700">
+                  {activeFilter === 'domain' ? 'Domain' : activeFilter === 'link' ? 'Link' : 'Tag'}
+                  <svg className="-mr-1 h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clipRule="evenodd" />
+                  </svg>
+                </Menu.Button>
 
-              <Menu.Items className="absolute right-0 z-10 mt-2 w-56 origin-top-right rounded-md bg-white dark:bg-gray-800 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
-                <div className="py-1">
-                  <div className="flex flex-col">
-                    <div className="px-4 py-2 flex gap-2">
-                      <button
-                        className={`flex-1 px-3 py-1 rounded-md ${activeFilter === 'domain' ? 'bg-gray-100 dark:bg-gray-700' : 'hover:bg-gray-50 dark:hover:bg-gray-700'}`}
-                        onClick={() => setActiveFilter('domain')}
-                      >
-                        Domain
-                      </button>
-                      <button
-                        className={`flex-1 px-3 py-1 rounded-md ${activeFilter === 'link' ? 'bg-gray-100 dark:bg-gray-700' : 'hover:bg-gray-50 dark:hover:bg-gray-700'}`}
-                        onClick={() => setActiveFilter('link')}
-                      >
-                        Link
-                      </button>
-                      <button
-                        className={`flex-1 px-3 py-1 rounded-md ${activeFilter === 'tag' ? 'bg-gray-100 dark:bg-gray-700' : 'hover:bg-gray-50 dark:hover:bg-gray-700'}`}
-                        onClick={() => setActiveFilter('tag')}
-                      >
-                        Tag
-                      </button>
+                <Menu.Items className="absolute right-0 z-10 mt-2 w-56 origin-top-right rounded-md bg-white dark:bg-gray-800 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+                  <div className="py-1">
+                    <div className="flex flex-col">
+                      <div className="px-4 py-2 flex gap-2">
+                        <button
+                          className={`flex-1 px-3 py-1 rounded-md ${activeFilter === 'domain' ? 'bg-gray-100 dark:bg-gray-700' : 'hover:bg-gray-50 dark:hover:bg-gray-700'}`}
+                          onClick={() => setActiveFilter('domain')}
+                        >
+                          Domain
+                        </button>
+                        <button
+                          className={`flex-1 px-3 py-1 rounded-md ${activeFilter === 'link' ? 'bg-gray-100 dark:bg-gray-700' : 'hover:bg-gray-50 dark:hover:bg-gray-700'}`}
+                          onClick={() => setActiveFilter('link')}
+                        >
+                          Link
+                        </button>
+                        <button
+                          className={`flex-1 px-3 py-1 rounded-md ${activeFilter === 'tag' ? 'bg-gray-100 dark:bg-gray-700' : 'hover:bg-gray-50 dark:hover:bg-gray-700'}`}
+                          onClick={() => setActiveFilter('tag')}
+                        >
+                          Tag
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Options List */}
+                    <div className="max-h-[240px] overflow-y-auto">
+                      {loading ? (
+                        <div className="px-4 py-2 text-gray-500 dark:text-gray-400">
+                          Loading...
+                        </div>
+                      ) : (
+                        filterOptions[activeFilter].map((option) => {
+                          const isSelected = selectedFilters[activeFilter]?.id === option.id;
+                          return (
+                            <Menu.Item key={option.id}>
+                              {({ active }) => (
+                                <button
+                                  className={`${
+                                    active
+                                      ? 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white'
+                                      : 'text-gray-700 dark:text-gray-200'
+                                  } group flex w-full items-center px-3 py-2 text-sm rounded-md`}
+                                  onClick={() => handleOptionSelect(option)}
+                                >
+                                  <span className="w-4 h-4 mr-3 text-gray-400">
+                                    {isSelected ? '✓' : '⭕'}
+                                  </span>
+                                  {option.value}
+                                </button>
+                              )}
+                            </Menu.Item>
+                          );
+                        })
+                      )}
+                      {!loading && filterOptions[activeFilter].length === 0 && (
+                        <div className="px-4 py-2 text-gray-500 dark:text-gray-400">
+                          No results found
+                        </div>
+                      )}
                     </div>
                   </div>
+                </Menu.Items>
+              </Menu>
 
-                  {/* Options List */}
-                  <div className="max-h-[240px] overflow-y-auto">
-                    {loading ? (
-                      <div className="px-4 py-2 text-gray-500 dark:text-gray-400">
-                        Loading...
-                      </div>
-                    ) : (
-                      filterOptions[activeFilter].map((option) => {
-                        const isSelected = selectedFilters[activeFilter]?.id === option.id;
-                        return (
-                          <Menu.Item key={option.id}>
+              {/* Selected Filters */}
+              <div className="flex flex-wrap gap-2">
+                {Object.entries(selectedFilters).map(([type, filter]) => (
+                  <div
+                    key={filter.id}
+                    className="flex items-center gap-1 px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-100 rounded-md text-sm"
+                  >
+                    <span>{type}: {filter.value}</span>
+                    <button
+                      onClick={() => handleOptionSelect(filter, type as 'domain' | 'link' | 'tag')}
+                      className="ml-1 text-blue-600 dark:text-blue-300 hover:text-blue-800 dark:hover:text-blue-100"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+              <Menu as="div" className="relative">
+                <Menu.Button className="px-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 dark:text-white inline-flex items-center">
+                  <span>{isCustomRange ? 'Custom Range' : selectedRange.label}</span>
+                  <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </Menu.Button>
+
+                <Transition
+                  enter="transition duration-100 ease-out"
+                  enterFrom="transform scale-95 opacity-0"
+                  enterTo="transform scale-100 opacity-100"
+                  leave="transition duration-75 ease-out"
+                  leaveFrom="transform scale-100 opacity-100"
+                  leaveTo="transform scale-95 opacity-0"
+                >
+                  <Menu.Items className="absolute left-0 mt-2 origin-top-left bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg focus:outline-none min-w-[800px] z-50">
+                    <div className="grid grid-cols-[300px_1fr] gap-4 p-4">
+                      <div className="space-y-2 border-r border-gray-200 dark:border-gray-700 pr-4">
+                        <h3 className="text-sm font-medium text-gray-900 dark:text-white px-4 mb-2">Select Range</h3>
+                        {timeRanges.map((range) => (
+                          <Menu.Item key={range.label}>
                             {({ active }) => (
                               <button
+                                onClick={() => handleRangeSelect(range)}
                                 className={`${
                                   active
                                     ? 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white'
                                     : 'text-gray-700 dark:text-gray-200'
-                                } group flex w-full items-center px-3 py-2 text-sm rounded-md`}
-                                onClick={() => handleOptionSelect(option)}
+                                } group flex w-full items-center px-4 py-2.5 text-sm rounded-md ${
+                                  selectedRange.label === range.label && !isCustomRange
+                                    ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'
+                                    : ''
+                                }`}
                               >
-                                <span className="w-4 h-4 mr-3 text-gray-400">
-                                  {isSelected ? '✓' : '⭕'}
-                                </span>
-                                {option.value}
+                                {range.label}
                               </button>
                             )}
                           </Menu.Item>
-                        );
-                      })
-                    )}
-                    {!loading && filterOptions[activeFilter].length === 0 && (
-                      <div className="px-4 py-2 text-gray-500 dark:text-gray-400">
-                        No results found
+                        ))}
                       </div>
-                    )}
-                  </div>
-                </div>
-              </Menu.Items>
-            </Menu>
+                      <div className="flex justify-center">
+                        <DatePicker
+                          selectsRange={true}
+                          startDate={startDate}
+                          endDate={endDate}
+                          onChange={(update) => {
+                            setDateRange(update);
+                            if (update[0] && update[1]) {
+                              setIsCustomRange(true);
+                            }
+                          }}
+                          monthsShown={2}
+                          inline
+                          calendarClassName="dark:bg-gray-800 dark:text-white"
+                          dayClassName={(date) => 
+                            "dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+                          }
+                        />
+                      </div>
+                    </div>
+                  </Menu.Items>
+                </Transition>
+              </Menu>
 
-            {/* Selected Filters */}
-            <div className="flex flex-wrap gap-2">
-              {Object.entries(selectedFilters).map(([type, filter]) => (
-                <div
-                  key={filter.id}
-                  className="flex items-center gap-1 px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-100 rounded-md text-sm"
-                >
-                  <span>{type}: {filter.value}</span>
-                  <button
-                    onClick={() => handleOptionSelect(filter, type as 'domain' | 'link' | 'tag')}
-                    className="ml-1 text-blue-600 dark:text-blue-300 hover:text-blue-800 dark:hover:text-blue-100"
-                  >
-                    ×
-                  </button>
-                </div>
-              ))}
+              <span className="flex items-center px-2 dark:text-gray-200">
+                {startDate && endDate ? (
+                  <>
+                    {format(startDate, 'MMM dd, yyyy')} - {format(endDate, 'MMM dd, yyyy')}
+                  </>
+                ) : (
+                  'Select date range'
+                )}
+              </span>
             </div>
 
-            <Menu as="div" className="relative">
-              <Menu.Button className="px-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 dark:text-white inline-flex items-center">
-                <span>{isCustomRange ? 'Custom Range' : selectedRange.label}</span>
-                <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </Menu.Button>
-
-              <Transition
-                enter="transition duration-100 ease-out"
-                enterFrom="transform scale-95 opacity-0"
-                enterTo="transform scale-100 opacity-100"
-                leave="transition duration-75 ease-out"
-                leaveFrom="transform scale-100 opacity-100"
-                leaveTo="transform scale-95 opacity-0"
-              >
-                <Menu.Items className="absolute left-0 mt-2 origin-top-left bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg focus:outline-none min-w-[800px] z-50">
-                  <div className="grid grid-cols-[300px_1fr] gap-4 p-4">
-                    <div className="space-y-2 border-r border-gray-200 dark:border-gray-700 pr-4">
-                      <h3 className="text-sm font-medium text-gray-900 dark:text-white px-4 mb-2">Select Range</h3>
-                      {timeRanges.map((range) => (
-                        <Menu.Item key={range.label}>
-                          {({ active }) => (
-                            <button
-                              onClick={() => handleRangeSelect(range)}
-                              className={`${
-                                active
-                                  ? 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white'
-                                  : 'text-gray-700 dark:text-gray-200'
-                              } group flex w-full items-center px-4 py-2.5 text-sm rounded-md ${
-                                selectedRange.label === range.label && !isCustomRange
-                                  ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'
-                                  : ''
-                              }`}
-                            >
-                              {range.label}
-                            </button>
-                          )}
-                        </Menu.Item>
-                      ))}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+              {activeView === 'stats' ? (
+                selectedFilters['link'] ? (
+                  loading ? (
+                    <div className="col-span-2 flex justify-center items-center h-64">
+                      <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900"></div>
                     </div>
-                    <div className="flex justify-center">
-                      <DatePicker
-                        selectsRange={true}
-                        startDate={startDate}
-                        endDate={endDate}
-                        onChange={(update) => {
-                          setDateRange(update);
-                          if (update[0] && update[1]) {
-                            setIsCustomRange(true);
-                          }
-                        }}
-                        monthsShown={2}
-                        inline
-                        calendarClassName="dark:bg-gray-800 dark:text-white"
-                        dayClassName={(date) => 
-                          "dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
-                        }
-                      />
-                    </div>
-                  </div>
-                </Menu.Items>
-              </Transition>
-            </Menu>
-
-            <span className="flex items-center px-2 dark:text-gray-200">
-              {startDate && endDate ? (
-                <>
-                  {format(startDate, 'MMM dd, yyyy')} - {format(endDate, 'MMM dd, yyyy')}
-                </>
-              ) : (
-                'Select date range'
-              )}
-            </span>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-            {activeView === 'stats' ? (
-              selectedFilters['link'] ? (
-                loading ? (
-                  <div className="col-span-2 flex justify-center items-center h-64">
-                    <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900"></div>
-                  </div>
-                ) : statistics ? (
-                  <>
-                    <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
-                      <h3 className="text-lg font-semibold mb-4">Total Clicks</h3>
-                      <p className="text-4xl font-bold">{statistics.total_clicks}</p>
-                    </div>
-                    
-                    <div className="col-span-2">
+                  ) : statistics ? (
+                    <>
                       <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
-                        <div className="flex gap-4 mb-4">
-                          <button
-                            className={`px-3 py-1 rounded-md ${activeTimeRange === 'hourly' ? 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-100' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
-                            onClick={() => setActiveTimeRange('hourly')}
-                          >
-                            Hourly
-                          </button>
-                          <button
-                            className={`px-3 py-1 rounded-md ${activeTimeRange === 'daily' ? 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-100' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
-                            onClick={() => setActiveTimeRange('daily')}
-                          >
-                            Daily
-                          </button>
-                          <button
-                            className={`px-3 py-1 rounded-md ${activeTimeRange === 'monthly' ? 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-100' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
-                            onClick={() => setActiveTimeRange('monthly')}
-                          >
-                            Monthly
-                          </button>
-                        </div>
-                        <div className="h-[300px]">
-                          {activeTimeRange === 'hourly' && (
-                            <LineChart
-                              data={prepareChartData()?.hourlyClicks || []}
-                              xKey="time"
-                              yKey="clicks"
-                              theme={theme}
-                              type="hourly"
-                            />
-                          )}
-                          {activeTimeRange === 'daily' && (
-                            <LineChart
-                              data={prepareChartData()?.dailyClicks || []}
-                              xKey="date"
-                              yKey="clicks"
-                              theme={theme}
-                              type="daily"
-                            />
-                          )}
-                          {activeTimeRange === 'monthly' && (
-                            <LineChart
-                              data={prepareChartData()?.monthlyClicks || []}
-                              xKey="month"
-                              yKey="clicks"
-                              theme={theme}
-                              type="monthly"
-                            />
-                          )}
-                        </div>
+                        <h3 className="text-lg font-semibold mb-4">Total Clicks</h3>
+                        <p className="text-4xl font-bold">{statistics.total_clicks}</p>
                       </div>
-                    </div>
-
-                    <ChartCard title="Devices">
-                      <PieChart
-                        data={prepareChartData()?.devices || []}
-                        theme={theme}
-                      />
-                    </ChartCard>
-
-                    <ChartCard title="Browsers">
-                      <PieChart
-                        data={prepareChartData()?.browsers || []}
-                        theme={theme}
-                      />
-                    </ChartCard>
-
-                    <ChartCard title="Operating Systems">
-                      <PieChart
-                        data={prepareChartData()?.os || []}
-                        theme={theme}
-                      />
-                    </ChartCard>
-
-                    <ChartCard title="Referrers">
-                      <PieChart
-                        data={prepareChartData()?.referrers || []}
-                        theme={theme}
-                      />
-                    </ChartCard>
-
-                    <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
-                      <h3 className="text-lg font-semibold mb-4">Subpaths</h3>
-                      {prepareChartData()?.subpaths.length === 0 ? (
-                        <div className="text-gray-500 dark:text-gray-400">No data available</div>
-                      ) : (
-                        <div className="space-y-2">
-                          {prepareChartData()?.subpaths.map((item, index) => (
-                            <div 
-                              key={index}
-                              className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-md"
+                      
+                      <div className="col-span-2">
+                        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
+                          <div className="flex gap-4 mb-4">
+                            <button
+                              className={`px-3 py-1 rounded-md ${activeTimeRange === 'hourly' ? 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-100' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
+                              onClick={() => setActiveTimeRange('hourly')}
                             >
-                              <span className="text-gray-700 dark:text-gray-200 font-medium">
-                                {item.name}
-                              </span>
-                              <span className="text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-600 px-2 py-1 rounded">
-                                {item.value} clicks
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </>
-                ) : null
-              ) : (
-                <div className="col-span-2 text-center text-gray-500 dark:text-gray-400">
-                  Select a link to view statistics
-                </div>
-              )
-            ) : (
-              // Events view
-              <div className="col-span-2">
-                <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
-                  <h3 className="text-lg font-semibold mb-4">Click Events</h3>
-                  {statistics?.user_actions ? (
-                    <div className="space-y-4">
-                      {statistics.user_actions.map((action, index) => (
-                        <div key={index} className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <p className="text-sm text-gray-500 dark:text-gray-400">User ID: {action.user_id}</p>
-                              <p className="text-sm text-gray-500 dark:text-gray-400">Action: {action.action}</p>
-                            </div>
-                            <p className="text-sm text-gray-500 dark:text-gray-400">
-                              {new Date(action.action_time).toLocaleString()}
-                            </p>
+                              Hourly
+                            </button>
+                            <button
+                              className={`px-3 py-1 rounded-md ${activeTimeRange === 'daily' ? 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-100' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
+                              onClick={() => setActiveTimeRange('daily')}
+                            >
+                              Daily
+                            </button>
+                            <button
+                              className={`px-3 py-1 rounded-md ${activeTimeRange === 'monthly' ? 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-100' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
+                              onClick={() => setActiveTimeRange('monthly')}
+                            >
+                              Monthly
+                            </button>
+                          </div>
+                          <div className="h-[300px]">
+                            {activeTimeRange === 'hourly' && (
+                              <LineChart
+                                data={prepareChartData()?.hourlyClicks || []}
+                                xKey="time"
+                                yKey="clicks"
+                                theme={theme}
+                                type="hourly"
+                              />
+                            )}
+                            {activeTimeRange === 'daily' && (
+                              <LineChart
+                                data={prepareChartData()?.dailyClicks || []}
+                                xKey="date"
+                                yKey="clicks"
+                                theme={theme}
+                                type="daily"
+                              />
+                            )}
+                            {activeTimeRange === 'monthly' && (
+                              <LineChart
+                                data={prepareChartData()?.monthlyClicks || []}
+                                xKey="month"
+                                yKey="clicks"
+                                theme={theme}
+                                type="monthly"
+                              />
+                            )}
                           </div>
                         </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center text-gray-500 dark:text-gray-400">
-                      No events available
-                    </div>
-                  )}
+                      </div>
+
+                      <ChartCard title="Devices">
+                        <PieChart
+                          data={prepareChartData()?.devices || []}
+                          theme={theme}
+                        />
+                      </ChartCard>
+
+                      <ChartCard title="Browsers">
+                        <PieChart
+                          data={prepareChartData()?.browsers || []}
+                          theme={theme}
+                        />
+                      </ChartCard>
+
+                      <ChartCard title="Operating Systems">
+                        <PieChart
+                          data={prepareChartData()?.os || []}
+                          theme={theme}
+                        />
+                      </ChartCard>
+
+                      <ChartCard title="Referrers">
+                        <PieChart
+                          data={prepareChartData()?.referrers || []}
+                          theme={theme}
+                        />
+                      </ChartCard>
+
+                      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
+                        <h3 className="text-lg font-semibold mb-4">Subpaths</h3>
+                        {prepareChartData()?.subpaths.length === 0 ? (
+                          <div className="text-gray-500 dark:text-gray-400">No data available</div>
+                        ) : (
+                          <div className="space-y-2">
+                            {prepareChartData()?.subpaths.map((item, index) => (
+                              <div 
+                                key={index}
+                                className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-md"
+                              >
+                                <span className="text-gray-700 dark:text-gray-200 font-medium">
+                                  {item.name}
+                                </span>
+                                <span className="text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-600 px-2 py-1 rounded">
+                                  {item.value} clicks
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </>
+                  ) : null
+                ) : (
+                  <div className="col-span-2 text-center text-gray-500 dark:text-gray-400">
+                    Select a link to view statistics
+                  </div>
+                )
+              ) : (
+                // Events view
+                <div className="col-span-2">
+                  <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
+                    <h3 className="text-lg font-semibold mb-4">Click Events</h3>
+                    {statistics?.user_actions ? (
+                      <div className="space-y-4">
+                        {statistics.user_actions.map((action, index) => (
+                          <div key={index} className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <p className="text-sm text-gray-500 dark:text-gray-400">User ID: {action.user_id}</p>
+                                <p className="text-sm text-gray-500 dark:text-gray-400">Action: {action.action}</p>
+                              </div>
+                              <p className="text-sm text-gray-500 dark:text-gray-400">
+                                {new Date(action.action_time).toLocaleString()}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center text-gray-500 dark:text-gray-400">
+                        No events available
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }

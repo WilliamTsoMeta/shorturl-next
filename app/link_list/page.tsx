@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase'
-import { ThemeToggle } from '@/components/ThemeToggle'
 import { useRouter } from 'next/navigation'
+import { Header } from '@/components/Header'
 
 interface Resource {
   id: string;
@@ -86,109 +86,99 @@ export default function LinkList() {
   }, [])
 
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-900">
-      {/* Header */}
-      <header className="bg-white dark:bg-gray-800 shadow">
-        <div className="max-w-7xl mx-auto px-4 py-6">
-          <div className="flex justify-between items-center">
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">我的链接</h1>
-            <div className="flex items-center space-x-4">
-              {loading && (
-                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-gray-900 dark:border-white"></div>
-              )}
-              <a
-                href="/create_link"
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                创建链接
-              </a>
-              <ThemeToggle />
-            </div>
-          </div>
-        </div>
-      </header>
-
-
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 py-6">
-        {error && (
-          <div className="p-4 text-red-500 bg-red-50 dark:bg-red-900/10 rounded-lg">
-            Error: {error}
-          </div>
-        )}
-        <div className="grid grid-cols-1 gap-4">
-          {resources.map((resource) => (
-            <div 
-              key={resource.id} 
-              className="flex items-center space-x-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer transition-colors"
-              onClick={() => handleLinkClick(resource)}
+    <>
+      <Header />
+      <div className="min-h-screen bg-white dark:bg-gray-900 mt-20">
+        {/* Main Content */}
+        <main className="max-w-7xl mx-auto px-4 py-6">
+          {/* Create New Link Button */}
+          <div className="mb-6">
+            <button
+              onClick={() => router.push('/create_link')}
+              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
             >
-              <div className="w-8 h-8 bg-gray-200 dark:bg-gray-700 rounded flex items-center justify-center">
-                {resource.attributes.icon ? (
-                  <img src={resource.attributes.icon} alt="" className="w-6 h-6" />
-                ) : (
-                  <span className="text-sm text-gray-600 dark:text-gray-400">
-                    {resource.attributes.click_count}
-                  </span>
-                )}
-              </div>
-              <div className="flex-1">
-                <div className="flex justify-between items-start">
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-white">
-                    {resource.attributes.title}
-                  </h3>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      router.push(`/analytics?url=${encodeURIComponent(resource.attributes.shortUrl)}`);
-                    }}
-                    className="px-3 py-1 text-sm bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-100 rounded-md hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors"
-                  >
-                    统计分析
-                  </button>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <a 
-                    href={resource.attributes.shortUrl} 
-                    className="text-blue-500 hover:underline" 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                  >
-                    {resource.attributes.shortUrl}
-                  </a>
-                  <span className="text-gray-400">→</span>
-                  <a 
-                    href={resource.attributes.originalUrl} 
-                    className="text-gray-500 hover:underline truncate" 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                  >
-                    {resource.attributes.originalUrl}
-                  </a>
-                </div>
-                {resource.attributes.description && (
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                    {resource.attributes.description}
-                  </p>
-                )}
-                <p className="text-sm text-gray-500 mt-1">
-                  点击：{resource.attributes.click_count} · 
-                  创建于：{new Date(resource.attributes.created_at).toLocaleDateString()}
-                </p>
-              </div>
-              {resource.qrcode?.attributes?.qr_code_url && (
-                <div className="w-16">
-                  <img 
-                    src={resource.qrcode.attributes.qr_code_url} 
-                    alt="QR Code" 
-                    className="w-full h-auto"
-                  />
-                </div>
-              )}
+              Create New Link
+            </button>
+          </div>
+          {error && (
+            <div className="p-4 text-red-500 bg-red-50 dark:bg-red-900/10 rounded-lg">
+              Error: {error}
             </div>
-          ))}
-        </div>
-      </main>
-    </div>
+          )}
+          <div className="grid grid-cols-1 gap-4">
+            {resources.map((resource) => (
+              <div 
+                key={resource.id} 
+                className="flex items-center space-x-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer transition-colors"
+                onClick={() => handleLinkClick(resource)}
+              >
+                <div className="w-8 h-8 bg-gray-200 dark:bg-gray-700 rounded flex items-center justify-center">
+                  {resource.attributes.icon ? (
+                    <img src={resource.attributes.icon} alt="" className="w-6 h-6" />
+                  ) : (
+                    <span className="text-sm text-gray-600 dark:text-gray-400">
+                      {resource.attributes.click_count}
+                    </span>
+                  )}
+                </div>
+                <div className="flex-1">
+                  <div className="flex justify-between items-start">
+                    <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+                      {resource.attributes.title}
+                    </h3>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        router.push(`/analytics?url=${encodeURIComponent(resource.attributes.shortUrl)}`);
+                      }}
+                      className="px-3 py-1 text-sm bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-100 rounded-md hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors"
+                    >
+                      统计分析
+                    </button>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <a 
+                      href={resource.attributes.shortUrl} 
+                      className="text-blue-500 hover:underline" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                    >
+                      {resource.attributes.shortUrl}
+                    </a>
+                    <span className="text-gray-400">→</span>
+                    <a 
+                      href={resource.attributes.originalUrl} 
+                      className="text-gray-500 hover:underline truncate" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                    >
+                      {resource.attributes.originalUrl}
+                    </a>
+                  </div>
+                  {resource.attributes.description && (
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                      {resource.attributes.description}
+                    </p>
+                  )}
+                  <p className="text-sm text-gray-500 mt-1">
+                    点击：{resource.attributes.click_count} · 
+                    创建于：{new Date(resource.attributes.created_at).toLocaleDateString()}
+                  </p>
+                </div>
+                {resource.qrcode?.attributes?.qr_code_url && (
+                  <div className="w-16">
+                    <img 
+                      src={resource.qrcode.attributes.qr_code_url} 
+                      alt="QR Code" 
+                      className="w-full h-auto"
+                    />
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </main>
+      </div>
+    </>
   )
 }

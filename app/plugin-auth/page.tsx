@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase';
+import { Header } from '@/components/Header';
 
 const SOCIAL_ACCOUNTS = [
   {
@@ -177,27 +178,30 @@ export default function PluginAuthPage() {
   }
 
   return (
-    <div className="grid grid-cols-1 gap-4 p-4 md:grid-cols-2 w-full max-w-[1000px] mx-auto my-0">
-      {SOCIAL_ACCOUNTS.map((account) => (
-        <div
-          key={account.platform}
-          className="flex justify-between items-center p-4 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700"
-        >
-          <div className="flex gap-4 items-center">
-            <div className="w-8 h-8 flex items-center justify-center bg-gray-100 dark:bg-gray-700 rounded-lg">
-              <Image
-                src={account.icon}
-                alt={account.name}
-                width={24}
-                height={24}
-                className="dark:invert"
-              />
+    <>
+      <Header />
+      <div className="grid grid-cols-1 gap-4 p-4 md:grid-cols-2 w-full max-w-[1000px] mx-auto my-0">
+        {SOCIAL_ACCOUNTS.map((account) => (
+          <div
+            key={account.platform}
+            className="flex justify-between items-center p-4 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700"
+          >
+            <div className="flex gap-4 items-center">
+              <div className="w-8 h-8 flex items-center justify-center bg-gray-100 dark:bg-gray-700 rounded-lg">
+                <Image
+                  src={account.icon}
+                  alt={account.name}
+                  width={24}
+                  height={24}
+                  className="dark:invert"
+                />
+              </div>
+              <span className="text-gray-900 dark:text-gray-100 font-medium">{account.name}</span>
             </div>
-            <span className="text-gray-900 dark:text-gray-100 font-medium">{account.name}</span>
+            {renderAuthButton(account)}
           </div>
-          {renderAuthButton(account)}
-        </div>
-      ))}
-    </div>
+        ))}
+      </div>
+    </>
   );
 }
