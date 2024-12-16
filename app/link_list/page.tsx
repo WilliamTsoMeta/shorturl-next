@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import { Header } from '@/components/Header'
@@ -40,8 +40,8 @@ export default function LinkList() {
     router.push(`/link/${resource.id}`);
   };
 
-  useEffect(() => {
-    const fetchResources = async () => {
+  const fetchResources = useCallback(
+    async () => {
       try {
         const supabase = createClient()
         const { data: { session } } = await supabase.auth.getSession()
@@ -57,6 +57,8 @@ export default function LinkList() {
             'Authorization': `Bearer ${session.access_token}`
           },
           body: JSON.stringify({
+            scopeType: selectedTeam ? 'team' : undefined,
+            scopeId: selectedTeam,
             resourceTypes: ["shorturl"],
             resourceSortBy: "created_at",
             resourceSortOrder: "DESC",
@@ -83,10 +85,13 @@ export default function LinkList() {
       } finally {
         setLoading(false)
       }
-    }
-
+    },[selectedTeam]
+  )
+  
+  useEffect(() => {
     fetchResources()
-  }, [])
+  }, [selectedTeam])
+  
 
   return (
     <div className="container mx-auto px-4">

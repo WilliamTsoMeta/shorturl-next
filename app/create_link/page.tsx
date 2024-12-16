@@ -4,6 +4,8 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase';
 import { useTeam } from '@/lib/contexts/TeamContext';
+import { useTeams } from '@/lib/hooks/useTeams';
+import { useProjects } from '@/lib/hooks/useProjects';
 import { z } from "zod";
 import debounce from 'lodash.debounce';
 import QRCodeStyling from "qr-code-styling";
@@ -20,6 +22,8 @@ const createLinkSchema = z.object({
   title: z.string().optional(),
   description: z.string().optional(),
   tags: z.array(z.string()).optional(),
+  teamId: z.string().min(1, "Team is required"),
+  projectId: z.string().min(1, "Project is required"),
 });
 
 type CreateLinkFormData = z.infer<typeof createLinkSchema>;
@@ -42,6 +46,10 @@ interface Tag {
 export default function CreateLink() {
   const router = useRouter();
   const { team, project } = useTeam();
+  const { teams, loading: teamsLoading } = useTeams();
+  const [selectedTeamId, setSelectedTeamId] = useState<string | null>(team?.id || null);
+  const { projects, loading: projectsLoading } = useProjects(selectedTeamId);
+  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(project?.id || null);
   const [shareName, setShareName] = useState('');
   const [shortUrl, setShortUrl] = useState('');
   const [longUrl, setLongUrl] = useState('');
@@ -171,14 +179,14 @@ export default function CreateLink() {
 
   useEffect(() => {
     const fetchTags = async () => {
-      if (!team?.id) return;
+      if (!selectedTeamId) return;
       
       const supabase = createClient();
       try {
         const { data: { session } } = await supabase.auth.getSession();
         if (!session?.access_token) return;
 
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/tags?teamId=${team.id}`, {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/tags?teamId=${selectedTeamId}`, {
           headers: {
             'Authorization': `Bearer ${session.access_token}`
           }
@@ -196,7 +204,7 @@ export default function CreateLink() {
     };
 
     fetchTags();
-  }, [team?.id]);
+  }, [selectedTeamId]);
 
   const getSlugSuggestion = async (domain: string) => {
     try {
@@ -236,21 +244,21 @@ export default function CreateLink() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setErrors({});
-    setSubmitError(null);
     setIsSubmitting(true);
+    setSubmitError(null);
+    setErrors({});
 
     try {
-      const formData = {
+      const validatedData = createLinkSchema.parse({
         longUrl,
         shortUrl,
         name: shareName,
         title,
         description,
         tags: selectedTags,
-      };
-      
-      const validatedData = createLinkSchema.parse(formData);
+        teamId: selectedTeamId,
+        projectId: selectedProjectId,
+      });
       
       const supabase = createClient();
       
@@ -276,7 +284,7 @@ export default function CreateLink() {
             'Authorization': `Bearer ${session.access_token}`
           },
           body: JSON.stringify({
-            type: 'shorturl',
+            type: "shorturl",
             attributes: {
               icon: finalImageUrl
             },
@@ -287,8 +295,8 @@ export default function CreateLink() {
               title: validatedData.title || '',
               description: validatedData.description || ''
             },
-            teamId: team?.id,
-            projectId: project?.id,
+            teamId: validatedData.teamId,
+            projectId: validatedData.projectId,
             qrcodeOption: {
               options: qrCodeOptions,
               saveAsTemplate: false,
@@ -359,6 +367,59 @@ export default function CreateLink() {
                 <p className="text-red-600">{submitError}</p>
               </div>
             )}
+            <div className="flex gap-4 mb-6">
+              <div className="flex-1">
+                <label htmlFor="team" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Select Team <span className="text-red-500">*</span>
+                </label>
+                <select
+                  id="team"
+                  value={selectedTeamId || ''}
+                  onChange={(e) => {
+                    const newTeamId = e.target.value || null;
+                    setSelectedTeamId(newTeamId);
+                    setSelectedProjectId(null);
+                  }}
+                  className={`block w-full px-4 pr-8 py-3 text-base rounded-lg border-gray-300 dark:border-gray-600 shadow-sm focus:border-blue-500 focus:ring-blue-500 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white ${errors.teamId ? 'border-red-500' : ''}`}
+                  required
+                >
+                  <option value="">Select a team</option>
+                  {teams?.map((team) => (
+                    <option key={team.id} value={team.id}>
+                      {team.name}
+                    </option>
+                  ))}
+                </select>
+                {errors.teamId && (
+                  <p className="mt-1 text-sm text-red-500">{errors.teamId}</p>
+                )}
+              </div>
+
+              <div className="flex-1">
+                <label htmlFor="project" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Select Project <span className="text-red-500">*</span>
+                </label>
+                <select
+                  id="project"
+                  value={selectedProjectId || ''}
+                  onChange={(e) => setSelectedProjectId(e.target.value || null)}
+                  className={`block w-full px-4 pr-8 py-3 text-base rounded-lg border-gray-300 dark:border-gray-600 shadow-sm focus:border-blue-500 focus:ring-blue-500 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white ${errors.projectId ? 'border-red-500' : ''}`}
+                  disabled={!selectedTeamId || projectsLoading}
+                  required
+                >
+                  <option value="">Select a project</option>
+                  {projects?.map((project) => (
+                    <option key={project.id} value={project.id}>
+                      {project.name}
+                    </option>
+                  ))}
+                </select>
+                {errors.projectId && (
+                  <p className="mt-1 text-sm text-red-500">{errors.projectId}</p>
+                )}
+              </div>
+            </div>
+
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Long URL
@@ -615,7 +676,7 @@ export default function CreateLink() {
                   </button>
                   <button
                     onClick={async () => {
-                      if (!team?.id) return;
+                      if (!selectedTeamId) return;
                       
                       const supabase = createClient();
                       try {
@@ -632,7 +693,7 @@ export default function CreateLink() {
                             name: newTag.name,
                             type: newTag.type,
                             attributes: {},
-                            team_id: team.id,
+                            team_id: selectedTeamId,
                             is_shared: true,
                             schema_version: 1,
                             is_system: false
@@ -644,7 +705,7 @@ export default function CreateLink() {
                         }
 
                         // Refresh tags list
-                        const tagsResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/tags?teamId=${team.id}`, {
+                        const tagsResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/tags?teamId=${selectedTeamId}`, {
                           headers: {
                             'Authorization': `Bearer ${session.access_token}`
                           }
