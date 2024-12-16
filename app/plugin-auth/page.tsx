@@ -150,21 +150,27 @@ export default function PluginAuthPage() {
   };
 
   const handleRevoke = async (platform: string) => {
-    setLoadingStates((prev) => ({ ...prev, [platform]: true }));
     try {
-      const supabase = createClient();
+      setLoadingStates((prev) => ({ ...prev, [platform]: true }));
+
       const { data: { session } } = await supabase.auth.getSession();
-      
       if (!session?.access_token) {
         router.push('/login');
         return;
       }
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/${platform}/auth/`, {
-        method: "DELETE",
+      const endpoint = `${process.env.NEXT_PUBLIC_WINDMILL_SYNC}/limq_oauth/${platform}_revoke_access`;
+      const body = JSON.stringify({
+        userId: session.user.id,
+      });
+
+      const response = await fetch(endpoint, {
+        method: 'POST',
         headers: {
-          'Authorization': `Bearer ${session.access_token}`
-        }
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${process.env.NEXT_PUBLIC_WINDMILL}`,
+        },
+        body
       });
 
       if (!response.ok) {
