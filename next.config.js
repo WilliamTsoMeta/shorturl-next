@@ -2,6 +2,14 @@ const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '**',
+      },
+    ],
+  },
   eslint: {
     ignoreDuringBuilds: true,
   },
