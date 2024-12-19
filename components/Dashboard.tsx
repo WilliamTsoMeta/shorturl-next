@@ -340,73 +340,49 @@ export default function Dashboard({
           </ChartCard>
         </div>
 
-        {/* Top Links Table */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden">
-          <div className="px-6 py-4 border-b dark:border-gray-700">
-            <h3 className="text-lg font-medium text-gray-900 dark:text-white">
-              Top Links
-            </h3>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-              <thead className="bg-gray-50 dark:bg-gray-900">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Link
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Clicks
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Conversion Rate
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                {loading ? (
-                  <tr>
-                    <td colSpan={3} className="text-center py-4">
-                      Loading...
-                    </td>
-                  </tr>
-                ) : dashboardData?.events ? (
-                  // Group events by shortUrl and get unique links
-                  Array.from(new Set(dashboardData.events.map(event => event.resource.attributes.shortUrl)))
-                    .map(shortUrl => {
-                      const event = dashboardData.events.find(e => e.resource.attributes.shortUrl === shortUrl);
-                      if (!event) return null;
-                      return {
-                        title: event.resource.attributes.title,
-                        shortUrl: shortUrl,
-                        clicks: getLinkClicks(dashboardData.events, shortUrl),
-                        conversionRate: 0 // You can calculate this if needed
-                      };
-                    })
-                    .filter(Boolean)
-                    .sort((a, b) => (b?.clicks || 0) - (a?.clicks || 0))
-                    .slice(0, 5)
-                    .map((link, index) => (
-                      <tr key={link?.shortUrl}>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                          {link?.title}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                          {link?.clicks}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                          {link?.conversionRate}%
-                        </td>
-                      </tr>
-                    ))
-                ) : (
-                  <tr>
-                    <td colSpan={3} className="text-center py-4">
-                      No data available
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+        {/* Recent Events */}
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Recent Events</h3>
+          <div className="space-y-4">
+            {dashboardData?.events.map((event, index) => {
+              const properties = JSON.parse(event.properties);
+              return (
+                <div
+                  key={index}
+                  className="flex items-center space-x-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg"
+                >
+                  <div className="flex-shrink-0">
+                    <img
+                      src={event.resource.attributes.icon || '/default-icon.png'}
+                      alt="Website Icon"
+                      className="w-10 h-10 rounded"
+                    />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                      {event.resource.attributes.title}
+                    </p>
+                    <div className="flex flex-wrap gap-2 mt-1">
+                      <span className="inline-flex items-center px-3 py-1 rounded text-sm font-semibold bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100">
+                        {event.url}
+                      </span>
+                      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-600 dark:text-gray-100">
+                        {properties.$browser}
+                      </span>
+                      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-600 dark:text-gray-100">
+                        {properties.$os}
+                      </span>
+                      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-600 dark:text-gray-100">
+                        {properties.$device || 'Unknown Device'}
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      {new Date(event.timestamp).toLocaleString()}
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       </main>
