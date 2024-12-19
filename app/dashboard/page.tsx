@@ -1,30 +1,108 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useTeam } from '@/lib/contexts/TeamContext';
 import { useTeams } from '@/lib/hooks/useTeams';
 import { useProjects } from '@/lib/hooks/useProjects';
 import { Header } from '@/components/Header';
 import Dashboard from '@/components/Dashboard';
+import { createClient } from '@/lib/supabase';
+import { subDays } from 'date-fns';
+import { toast } from 'react-hot-toast';
+
+interface EventData {
+  events: Array<{
+    resource: {
+      attributes: {
+        title: string;
+        shortUrl: string;
+        originalUrl: string;
+        click_count: number;
+      };
+    };
+    url: string;
+    event: string;
+    timestamp: string;
+    properties: string;
+  }>;
+  statistics: {
+    total_clicks: number;
+    device: Record<string, { clicks: number }>;
+    browser: Record<string, { clicks: number }>;
+    os: Record<string, { clicks: number }>;
+    referrer: Record<string, { clicks: number }>;
+    hourly_clicks: Array<{ hour: string; clicks: number }>;
+    daily_clicks: Array<{ date: string; clicks: number }>;
+    monthly_clicks: Array<{ month: string; clicks: number }>;
+  };
+}
 
 export default function DashboardPage() {
   const [selectedTeam, setSelectedTeam] = useState<string | null>(null);
   const [selectedProject, setSelectedProject] = useState<string | null>(null);
-  const { team, project } = useTeam();
   const { teams, loading: teamsLoading } = useTeams();
   const { projects, loading: projectsLoading } = useProjects(selectedTeam);
+  const [loading, setLoading] = useState(true);
+  const [dashboardData, setDashboardData] = useState<EventData | null>(null);
 
-  useEffect(() => {
-    if (team?.id) {
-      setSelectedTeam(team.id);
-    }
-  }, [team]);
+  const fetchDashboardData = async () => {
+    try {
+      setLoading(true);
+      const supabase = createClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session?.access_token) {
+        throw new Error('No authentication token found');
+      }
 
-  useEffect(() => {
-    if (project?.id) {
-      setSelectedProject(project.id);
+      const endpoint = `${process.env.NEXT_PUBLIC_API_URL}/statistics/batch-events`;
+      
+      // Prepare request body
+      const requestBody: any = {};
+      if (selectedTeam) {
+        requestBody.teamId = selectedTeam;
+      }
+      if (selectedProject) {
+        requestBody.projectId = selectedProject;
+      }
+
+      // Default to last 7 days
+      const endDate = new Date();
+      const startDate = subDays(endDate, 7);
+      requestBody.startDate = startDate.toISOString();
+      requestBody.endDate = endDate.toISOString();
+
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody)
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch dashboard data');
+      }
+
+      const data = await response.json();
+      setDashboardData(data);
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error);
+      toast.error('Failed to fetch dashboard data');
+    } finally {
+      setLoading(false);
     }
-  }, [project]);
+  };
+
+  // Fetch data when page loads
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
+
+  // Fetch data when team or project changes
+  useEffect(() => {
+    fetchDashboardData();
+  }, [selectedTeam, selectedProject]);
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -63,10 +141,12 @@ export default function DashboardPage() {
           </div>
 
           {/* Dashboard Component */}
-          {selectedTeam && (
+          {dashboardData && dashboardData.statistics && (
             <Dashboard
               teamId={selectedTeam}
               projectId={selectedProject}
+              data={dashboardData}
+              isLoading={loading}
             />
           )}
         </div>

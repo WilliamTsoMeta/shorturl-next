@@ -79,6 +79,8 @@ const ChartCard = ({ title, children }: ChartCardProps) => {
 interface DashboardProps {
   teamId: string | null;
   projectId: string | null;
+  data?: EventData | null;
+  isLoading?: boolean;
 }
 
 interface Statistics {
@@ -154,12 +156,32 @@ const formatDataForPieChart = (data: Record<string, { clicks: number }>) => {
   }));
 };
 
-export default function Dashboard({ teamId, projectId }: DashboardProps) {
+export default function Dashboard({ teamId, projectId, data, isLoading }: DashboardProps) {
   const { theme } = useTheme();
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(isLoading ?? true);
   const [selectedRange, setSelectedRange] = useState(timeRanges[1]); // Default to last 7 days
   const [customDateRange, setCustomDateRange] = useState<[Date | null, Date | null]>([null, null]);
-  const [dashboardData, setDashboardData] = useState<EventData | null>(null);
+  const [dashboardData, setDashboardData] = useState<EventData | null>(data ?? null);
+
+  useEffect(() => {
+    setLoading(isLoading ?? true);
+  }, [isLoading]);
+
+  useEffect(() => {
+    if (data) {
+      setDashboardData(data);
+    }
+  }, [data]);
+
+  useEffect(() => {
+    if (selectedRange.value === 'custom') {
+      if (customDateRange[0] && customDateRange[1]) {
+        fetchDashboardData();
+      }
+    } else {
+      fetchDashboardData();
+    }
+  }, [selectedRange, customDateRange]);
 
   const fetchDashboardData = async () => {
     try {
@@ -220,16 +242,6 @@ export default function Dashboard({ teamId, projectId }: DashboardProps) {
     setLoading(true);
     fetchDashboardData();
   }, [teamId, projectId]);
-
-  useEffect(() => {
-    if (selectedRange.value === 'custom') {
-      if (customDateRange[0] && customDateRange[1]) {
-        fetchDashboardData();
-      }
-    } else {
-      fetchDashboardData();
-    }
-  }, [selectedRange, customDateRange]);
 
   // Helper function to get total clicks for a link
   const getLinkClicks = (events: EventData['events'], shortUrl: string) => {
