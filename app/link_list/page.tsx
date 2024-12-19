@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import { Header } from '@/components/Header'
 import Image from 'next/image'
 import Dashboard from '@/components/Dashboard'
-import { Selectors } from '@/components/Selectors'
+import Selectors from '@/components/Selectors'
 
 interface Resource {
   id: string;
@@ -27,13 +27,23 @@ interface Resource {
   };
 }
 
+const timeRanges = [
+  { label: 'Last 24 hours', value: 'last_24_hours' },
+  { label: 'Last 7 days', value: 'last_7_days' },
+  { label: 'Last 30 days', value: 'last_30_days' },
+  { label: 'Custom', value: 'custom' },
+]
+
 export default function LinkList() {
   const [resources, setResources] = useState<Resource[]>([])
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [selectedTeam, setSelectedTeam] = useState<string | null>(null)
   const [selectedProject, setSelectedProject] = useState<string | null>(null)
-  const [showDashboard, setShowDashboard] = useState(true)
+  const [showDashboard, setShowDashboard] = useState(false)
+  const [selectedRange, setSelectedRange] = useState(timeRanges[1]) // Default to last 7 days
+  const [customDateRange, setCustomDateRange] = useState<[Date | null, Date | null]>([null, null])
+
   const router = useRouter()
 
   const handleLinkClick = (resource: Resource) => {
@@ -98,13 +108,7 @@ export default function LinkList() {
       <Header />
       <main className="container mx-auto px-4 py-8">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
-          <Selectors
-            selectedTeam={selectedTeam}
-            selectedProject={selectedProject}
-            onTeamChange={setSelectedTeam}
-            onProjectChange={setSelectedProject}
-            showDateRange={false}
-          />
+         
 
           <div className="flex gap-4 items-center">
             <button
@@ -122,11 +126,25 @@ export default function LinkList() {
             </button>
           </div>
         </div>
-
+        <Selectors
+          selectedTeam={selectedTeam}
+          selectedProject={selectedProject}
+          onTeamChange={setSelectedTeam}
+          onProjectChange={setSelectedProject}
+          onTimeRangeChange={setSelectedRange}
+          selectedTimeRange={selectedRange}
+          onDateRangeChange={(start, end) => setCustomDateRange([start, end])}
+          showDateRange={showDashboard}
+        />
         {/* Dashboard Section */}
         {showDashboard && (
           <div className="mb-8">
-            <Dashboard teamId={selectedTeam} projectId={selectedProject} />
+            <Dashboard 
+              teamId={selectedTeam} 
+              projectId={selectedProject} 
+              selectedRange={selectedRange}
+              customDateRange={customDateRange}
+            />
           </div>
         )}
 

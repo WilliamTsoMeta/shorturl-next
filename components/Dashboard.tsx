@@ -81,6 +81,8 @@ interface DashboardProps {
   projectId: string | null;
   data?: EventData | null;
   isLoading?: boolean;
+  selectedRange: typeof timeRanges[0];
+  customDateRange: [Date | null, Date | null];
 }
 
 interface Statistics {
@@ -156,32 +158,37 @@ const formatDataForPieChart = (data: Record<string, { clicks: number }>) => {
   }));
 };
 
-export default function Dashboard({ teamId, projectId, data, isLoading }: DashboardProps) {
-  const { theme } = useTheme();
-  const [loading, setLoading] = useState(isLoading ?? true);
-  const [selectedRange, setSelectedRange] = useState(timeRanges[1]); // Default to last 7 days
-  const [customDateRange, setCustomDateRange] = useState<[Date | null, Date | null]>([null, null]);
-  const [dashboardData, setDashboardData] = useState<EventData | null>(data ?? null);
+export default function Dashboard({ 
+  teamId, 
+  projectId, 
+  data, 
+  isLoading,
+  selectedRange,
+  customDateRange 
+}: DashboardProps) {
+  const { theme } = useTheme()
+  const [loading, setLoading] = useState(isLoading ?? true)
+  const [dashboardData, setDashboardData] = useState<EventData | null>(data ?? null)
 
   useEffect(() => {
-    setLoading(isLoading ?? true);
-  }, [isLoading]);
+    setLoading(isLoading ?? true)
+  }, [isLoading])
 
   useEffect(() => {
     if (data) {
-      setDashboardData(data);
+      setDashboardData(data)
     }
-  }, [data]);
+  }, [data])
 
   useEffect(() => {
     if (selectedRange.value === 'custom') {
       if (customDateRange[0] && customDateRange[1]) {
-        fetchDashboardData();
+        fetchDashboardData()
       }
     } else {
-      fetchDashboardData();
+      fetchDashboardData()
     }
-  }, [selectedRange, customDateRange]);
+  }, [selectedRange, customDateRange])
 
   const fetchDashboardData = async () => {
     try {
@@ -204,15 +211,13 @@ export default function Dashboard({ teamId, projectId, data, isLoading }: Dashbo
         requestBody.projectId = projectId;
       }
 
-      // Add date range parameters
-      if (selectedRange.value === 'custom' && customDateRange[0] && customDateRange[1]) {
-        requestBody.startDate = customDateRange[0].toISOString();
-        requestBody.endDate = customDateRange[1].toISOString();
-      } else if (selectedRange.value !== 'custom') {
-        const { startDate, endDate } = getDateRange(selectedRange.value);
-        requestBody.startDate = startDate.toISOString();
-        requestBody.endDate = endDate.toISOString();
-      }
+      // Add date range to request
+      const dateRange = selectedRange.value === 'custom'
+        ? { startDate: customDateRange[0], endDate: customDateRange[1] }
+        : getDateRange(selectedRange.value);
+      
+      requestBody.startDate = dateRange.startDate?.toISOString();
+      requestBody.endDate = dateRange.endDate?.toISOString();
 
       const response = await fetch(endpoint, {
         method: 'POST',
@@ -260,54 +265,6 @@ export default function Dashboard({ teamId, projectId, data, isLoading }: Dashbo
   return (
     <div className="bg-gray-50 dark:bg-gray-900">
       <main className="container mx-auto px-4 py-8">
-        {/* Filters */}
-        <div className="mb-8 flex flex-wrap gap-4">
-          <Menu as="div" className="relative">
-            <Menu.Button className="px-4 py-2 border rounded-md dark:bg-gray-800 dark:border-gray-700">
-              {selectedRange.label}
-            </Menu.Button>
-            <Transition
-              enter="transition ease-out duration-100"
-              enterFrom="transform opacity-0 scale-95"
-              enterTo="transform opacity-100 scale-100"
-              leave="transition ease-in duration-75"
-              leaveFrom="transform opacity-100 scale-100"
-              leaveTo="transform opacity-0 scale-95"
-            >
-              <Menu.Items className="absolute left-0 z-10 mt-2 w-56 origin-top-left rounded-md bg-white dark:bg-gray-800 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
-                <div className="py-1">
-                  {timeRanges.map((range) => (
-                    <Menu.Item key={range.value}>
-                      {({ active }) => (
-                        <button
-                          onClick={() => setSelectedRange(range)}
-                          className={`${
-                            active ? 'bg-gray-100 dark:bg-gray-700' : ''
-                          } block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200`}
-                        >
-                          {range.label}
-                        </button>
-                      )}
-                    </Menu.Item>
-                  ))}
-                </div>
-              </Menu.Items>
-            </Transition>
-          </Menu>
-
-          {selectedRange.value === 'custom' && (
-            <DatePicker
-              selectsRange={true}
-              startDate={customDateRange[0]}
-              endDate={customDateRange[1]}
-              onChange={(update: [Date | null, Date | null]) => {
-                setCustomDateRange(update);
-              }}
-              className="px-4 py-2 border rounded-md dark:bg-gray-800 dark:border-gray-700 dark:text-white"
-            />
-          )}
-        </div>
-
         {/* Overview Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <DashboardCard
