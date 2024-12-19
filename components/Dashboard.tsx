@@ -114,6 +114,20 @@ interface EventData {
   statistics: Statistics;
 }
 
+interface Resource {
+  id: string;
+  type: string;
+  attributes: {
+    title: string;
+    shortUrl: string;
+    originalUrl: string;
+    description: string;
+    icon: string;
+    click_count: number;
+    created_at: string;
+  };
+}
+
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d', '#ffc658', '#ff7300'];
 
 const timeRanges = [
@@ -169,6 +183,7 @@ export default function Dashboard({
   const { theme } = useTheme()
   const [loading, setLoading] = useState(isLoading ?? true)
   const [dashboardData, setDashboardData] = useState<EventData | null>(data ?? null)
+  const [recentLinks, setRecentLinks] = useState<Resource[]>([]);
 
   useEffect(() => {
     setLoading(isLoading ?? true)
@@ -181,6 +196,10 @@ export default function Dashboard({
   }, [data])
 
   useEffect(() => {
+    fetchRecentLinks();
+  }, []);
+
+  useEffect(() => {
     if (selectedRange.value === 'custom') {
       if (customDateRange[0] && customDateRange[1]) {
         fetchDashboardData()
@@ -189,6 +208,12 @@ export default function Dashboard({
       fetchDashboardData()
     }
   }, [selectedRange, customDateRange])
+
+  useEffect(() => {
+    if (teamId) {
+      fetchRecentLinks();
+    }
+  }, [teamId, projectId]);
 
   const fetchDashboardData = async () => {
     try {
@@ -243,10 +268,59 @@ export default function Dashboard({
     }
   };
 
-  useEffect(() => {
-    setLoading(true);
-    fetchDashboardData();
-  }, [teamId, projectId]);
+  const fetchRecentLinks = async () => {
+    try {
+      const supabase = createClient();
+      const session = await supabase.auth.getSession();
+
+      if (!session.data.session?.access_token) {
+        throw new Error('No authentication token found');
+      }
+
+      const endpoint = `${process.env.NEXT_PUBLIC_API_URL}/resource/list`;
+      
+      // Get date range for last 7 days
+      const endDate = new Date();
+      const startDate = subDays(endDate, 7);
+
+      const requestBody: any = {
+        resourceTypes: ["shorturl"],
+        resourceSortBy: "created_at",
+        resourceSortOrder: "DESC",
+        groupByTag: false,
+        pageSize: 10,
+        pageNumber: 1,
+        created_at_start: startDate.toISOString(),
+        created_at_end: endDate.toISOString(),
+      };
+
+      if (teamId) {
+        requestBody.teamId = teamId;
+      }
+      if (projectId) {
+        requestBody.projectId = projectId;
+      }
+
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.data.session.access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody)
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch recent links');
+      }
+
+      const data = await response.json();
+      const resources = data.data[0].resources || [];
+      setRecentLinks(resources);
+    } catch (error) {
+      console.error('Error fetching recent links:', error);
+    }
+  };
 
   // Helper function to get total clicks for a link
   const getLinkClicks = (events: EventData['events'], shortUrl: string) => {
@@ -340,49 +414,77 @@ export default function Dashboard({
           </ChartCard>
         </div>
 
-        {/* Recent Events */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Recent Events</h3>
-          <div className="h-[500px] overflow-y-auto pr-2 space-y-4">
-            {dashboardData?.events.map((event, index) => {
-              const properties = JSON.parse(event.properties);
-              return (
+        {/* Recent Events and Links Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Recent Events */}
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Recent Events</h3>
+            <div className="h-[500px] overflow-y-auto pr-2 space-y-4">
+              {dashboardData?.events.map((event, index) => {
+                const properties = JSON.parse(event.properties);
+                return (
+                  <div
+                    key={index}
+                    className="flex items-center space-x-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg"
+                  >
+     
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                        {event.resource.attributes.title}
+                      </p>
+                      <div className="flex flex-wrap gap-2 mt-1">
+                        <span className="inline-flex items-center px-3 py-1 rounded text-sm font-semibold bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100">
+                          {event.url}
+                        </span>
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-600 dark:text-gray-100">
+                          {properties.$browser}
+                        </span>
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-600 dark:text-gray-100">
+                          {properties.$os}
+                        </span>
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-600 dark:text-gray-100">
+                          {properties.$device || 'Unknown Device'}
+                        </span>
+                      </div>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        {new Date(event.timestamp).toLocaleString()}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Recent Links */}
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Recent Links</h3>
+            <div className="h-[500px] overflow-y-auto pr-2 space-y-4">
+              {recentLinks.map((link) => (
                 <div
-                  key={index}
+                  key={link.id}
                   className="flex items-center space-x-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg"
                 >
-                  <div className="flex-shrink-0">
-                    <img
-                      src={event.resource.attributes.icon || '/default-icon.png'}
-                      alt="Website Icon"
-                      className="w-10 h-10 rounded"
-                    />
-                  </div>
+                 
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                      {event.resource.attributes.title}
+                      {link.attributes.title}
                     </p>
                     <div className="flex flex-wrap gap-2 mt-1">
                       <span className="inline-flex items-center px-3 py-1 rounded text-sm font-semibold bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100">
-                        {event.url}
+                        {link.attributes.shortUrl}
                       </span>
                       <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-600 dark:text-gray-100">
-                        {properties.$browser}
-                      </span>
-                      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-600 dark:text-gray-100">
-                        {properties.$os}
-                      </span>
-                      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-600 dark:text-gray-100">
-                        {properties.$device || 'Unknown Device'}
+                        {link.attributes.click_count} clicks
                       </span>
                     </div>
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                      {new Date(event.timestamp).toLocaleString()}
+                      Created at: {new Date(link.attributes.created_at).toLocaleString()}
                     </p>
                   </div>
                 </div>
-              );
-            })}
+              ))}
+            </div>
           </div>
         </div>
       </main>
