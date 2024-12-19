@@ -74,6 +74,7 @@ export default function LinkList() {
             resourceTypes: ["shorturl"],
             resourceSortBy: "created_at",
             resourceSortOrder: "DESC",
+            groupByTag: false,
             pageSize: 10,
             pageNumber: 1,
             isFavorite: null,
