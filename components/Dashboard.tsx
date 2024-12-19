@@ -343,7 +343,7 @@ export default function Dashboard({
         {/* Recent Events */}
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Recent Events</h3>
-          <div className="space-y-4">
+          <div className="h-[500px] overflow-y-auto pr-2 space-y-4">
             {dashboardData?.events.map((event, index) => {
               const properties = JSON.parse(event.properties);
               return (
