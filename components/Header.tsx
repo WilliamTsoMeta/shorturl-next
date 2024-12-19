@@ -21,6 +21,7 @@ export function Header() {
 
   const menuItems = [
     { href: '/link_list', label: 'Links' },
+    { href: '/dashboard', label: 'Dashboard' },
     { href: '/plugin-auth', label: 'Plugins' },
   ]
 

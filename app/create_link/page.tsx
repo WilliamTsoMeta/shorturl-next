@@ -9,7 +9,7 @@ import { useProjects } from '@/lib/hooks/useProjects';
 import { z } from "zod";
 import debounce from 'lodash.debounce';
 import QRCodeStyling from "qr-code-styling";
-import QRCodeEditor from "../components/QRCodeEditor";
+import QRCodeEditor from "@/components/QRCodeEditor";
 import { createPortal } from 'react-dom';
 import { Header } from '@/components/Header';
 
