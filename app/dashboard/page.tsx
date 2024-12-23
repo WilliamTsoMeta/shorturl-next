@@ -1,21 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useTeams } from '@/lib/hooks/useTeams';
-import { useProjects } from '@/lib/hooks/useProjects';
 import { Header } from '@/components/Header';
 import Dashboard from '@/components/Dashboard';
 import { createClient } from '@/lib/supabase';
 import { subDays } from 'date-fns';
 import { toast } from 'react-hot-toast';
 import Selectors from '@/components/Selectors';
-
-const timeRanges = [
-  { label: 'Last 24 hours', value: 'last_24_hours' },
-  { label: 'Last 7 days', value: 'last_7_days' },
-  { label: 'Last 30 days', value: 'last_30_days' },
-  { label: 'Custom', value: 'custom' },
-];
+import "react-datepicker/dist/react-datepicker.css";
 
 interface EventData {
   events: Array<{
@@ -47,13 +39,12 @@ interface EventData {
 export default function DashboardPage() {
   const [selectedTeam, setSelectedTeam] = useState<string | null>(null);
   const [selectedProject, setSelectedProject] = useState<string | null>(null);
-  const [selectedRange, setSelectedRange] = useState(timeRanges[1]); // Default to last 7 days
-  const [customDateRange, setCustomDateRange] = useState<[Date | null, Date | null]>([null, null]);
+  const [dateRange, setDateRange] = useState<[Date | null, Date | null]>([
+    subDays(new Date(), 7),
+    new Date()
+  ]);
   const [loading, setLoading] = useState(true);
   const [dashboardData, setDashboardData] = useState<EventData | null>(null);
-
-  const { teams, loading: teamsLoading } = useTeams();
-  const { projects, loading: projectsLoading } = useProjects(selectedTeam);
 
   const fetchDashboardData = async () => {
     try {
@@ -67,7 +58,6 @@ export default function DashboardPage() {
 
       const endpoint = `${process.env.NEXT_PUBLIC_API_URL}/statistics/batch-events`;
       
-      // Prepare request body
       const requestBody: any = {};
       if (selectedTeam) {
         requestBody.teamId = selectedTeam;
@@ -76,30 +66,11 @@ export default function DashboardPage() {
         requestBody.projectId = selectedProject;
       }
 
-      // Set date range based on selection
-      let startDate: Date;
-      let endDate = new Date();
-
-      if (selectedRange.value === 'custom' && customDateRange[0] && customDateRange[1]) {
-        startDate = customDateRange[0];
-        endDate = customDateRange[1];
-      } else {
-        switch (selectedRange.value) {
-          case 'last_24_hours':
-            startDate = subDays(endDate, 1);
-            break;
-          case 'last_30_days':
-            startDate = subDays(endDate, 30);
-            break;
-          case 'last_7_days':
-          default:
-            startDate = subDays(endDate, 7);
-            break;
-        }
+      const [startDate, endDate] = dateRange;
+      if (startDate && endDate) {
+        requestBody.startDate = startDate.toISOString();
+        requestBody.endDate = endDate.toISOString();
       }
-
-      requestBody.startDate = startDate.toISOString();
-      requestBody.endDate = endDate.toISOString();
 
       const response = await fetch(endpoint, {
         method: 'POST',
@@ -131,8 +102,10 @@ export default function DashboardPage() {
 
   // Fetch data when team, project, or date range changes
   useEffect(() => {
-    fetchDashboardData();
-  }, [selectedTeam, selectedProject, selectedRange, customDateRange]);
+    if(dateRange[0] && dateRange[1]) {
+      fetchDashboardData();
+    }
+  }, [selectedTeam, selectedProject, dateRange]);
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -144,10 +117,8 @@ export default function DashboardPage() {
             selectedProject={selectedProject}
             onTeamChange={setSelectedTeam}
             onProjectChange={setSelectedProject}
-            onTimeRangeChange={setSelectedRange}
-            selectedTimeRange={selectedRange}
-            onDateRangeChange={(start, end) => setCustomDateRange([start, end])}
-            showDateRange={true}
+            dateRange={dateRange}
+            onDateRangeChange={setDateRange}
           />
 
           {/* Dashboard Component */}
@@ -157,8 +128,7 @@ export default function DashboardPage() {
               projectId={selectedProject}
               data={dashboardData}
               isLoading={loading}
-              selectedRange={selectedRange}
-              customDateRange={customDateRange}
+              dateRange={dateRange}
             />
           )}
         </div>

@@ -5,8 +5,8 @@ import { createClient } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import { Header } from '@/components/Header'
 import Image from 'next/image'
-import Dashboard from '@/components/Dashboard'
 import Selectors from '@/components/Selectors'
+import { subDays, startOfDay, endOfDay } from 'date-fns';
 
 interface Resource {
   id: string;
@@ -40,9 +40,10 @@ export default function LinkList() {
   const [error, setError] = useState<string | null>(null)
   const [selectedTeam, setSelectedTeam] = useState<string | null>(null)
   const [selectedProject, setSelectedProject] = useState<string | null>(null)
-  const [showDashboard, setShowDashboard] = useState(false)
-  const [selectedRange, setSelectedRange] = useState(timeRanges[1]) // Default to last 7 days
-  const [customDateRange, setCustomDateRange] = useState<[Date | null, Date | null]>([null, null])
+  const [dateRange, setDateRange] = useState<[Date | null, Date | null]>([
+    startOfDay(subDays(new Date(), 7)),
+    endOfDay(new Date())
+  ]);
 
   const router = useRouter()
 
@@ -118,13 +119,6 @@ export default function LinkList() {
             >
               创建新链接
             </button>
-
-            <button
-              onClick={() => setShowDashboard(!showDashboard)}
-              className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors"
-            >
-              {showDashboard ? '隐藏统计' : '显示统计'}
-            </button>
           </div>
         </div>
         <Selectors
@@ -132,22 +126,8 @@ export default function LinkList() {
           selectedProject={selectedProject}
           onTeamChange={setSelectedTeam}
           onProjectChange={setSelectedProject}
-          onTimeRangeChange={setSelectedRange}
-          selectedTimeRange={selectedRange}
-          onDateRangeChange={(start, end) => setCustomDateRange([start, end])}
-          showDateRange={showDashboard}
+          onDateRangeChange={setDateRange}
         />
-        {/* Dashboard Section */}
-        {showDashboard && (
-          <div className="mb-8">
-            <Dashboard 
-              teamId={selectedTeam} 
-              projectId={selectedProject} 
-              selectedRange={selectedRange}
-              customDateRange={customDateRange}
-            />
-          </div>
-        )}
 
         {/* Links Section */}
         <div className="mt-8">

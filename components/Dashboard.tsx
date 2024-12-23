@@ -81,8 +81,7 @@ interface DashboardProps {
   projectId: string | null;
   data?: EventData | null;
   isLoading?: boolean;
-  selectedRange: typeof timeRanges[0];
-  customDateRange: [Date | null, Date | null];
+  dateRange: [Date | null, Date | null];
 }
 
 interface Statistics {
@@ -130,14 +129,6 @@ interface Resource {
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d', '#ffc658', '#ff7300'];
 
-const timeRanges = [
-  { label: 'Today', value: 'today', days: 1 },
-  { label: 'Last 7 days', value: 'last_7_days', days: 7 },
-  { label: 'Last 30 days', value: 'last_30_days', days: 30 },
-  { label: 'This year', value: 'this_year', days: 365 },
-  { label: 'Custom', value: 'custom', days: 0 },
-];
-
 const getDateRange = (rangeValue: string) => {
   const now = new Date();
   let startDate = new Date();
@@ -177,8 +168,7 @@ export default function Dashboard({
   projectId, 
   data, 
   isLoading,
-  selectedRange,
-  customDateRange 
+  dateRange
 }: DashboardProps) {
   const { theme } = useTheme()
   const [loading, setLoading] = useState(isLoading ?? true)
@@ -199,74 +189,6 @@ export default function Dashboard({
     fetchRecentLinks();
   }, []);
 
-  useEffect(() => {
-    if (selectedRange.value === 'custom') {
-      if (customDateRange[0] && customDateRange[1]) {
-        fetchDashboardData()
-      }
-    } else {
-      fetchDashboardData()
-    }
-  }, [selectedRange, customDateRange])
-
-  useEffect(() => {
-    if (teamId) {
-      fetchRecentLinks();
-    }
-  }, [teamId, projectId]);
-
-  const fetchDashboardData = async () => {
-    try {
-      setLoading(true);
-      const supabase = createClient();
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session?.access_token) {
-        throw new Error('No authentication token found');
-      }
-
-      let endpoint = `${process.env.NEXT_PUBLIC_API_URL}/statistics/batch-events`;
-      
-      // Prepare request body
-      const requestBody: any = {};
-      if (teamId) {
-        requestBody.teamId = teamId;
-      }
-      if (projectId) {
-        requestBody.projectId = projectId;
-      }
-
-      // Add date range to request
-      const dateRange = selectedRange.value === 'custom'
-        ? { startDate: customDateRange[0], endDate: customDateRange[1] }
-        : getDateRange(selectedRange.value);
-      
-      requestBody.startDate = dateRange.startDate?.toISOString();
-      requestBody.endDate = dateRange.endDate?.toISOString();
-
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(requestBody)
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch dashboard data');
-      }
-
-      const data = await response.json();
-      console.log('Dashboard API Response:', data);
-      setDashboardData(data);
-    } catch (error) {
-      console.error('Error fetching dashboard data:', error);
-      toast.error('Failed to fetch dashboard data');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const fetchRecentLinks = async () => {
     try {
