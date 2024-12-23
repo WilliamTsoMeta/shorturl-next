@@ -422,12 +422,13 @@ export default function Dashboard({
             <div className="h-[500px] overflow-y-auto pr-2 space-y-4">
               {dashboardData?.events.map((event, index) => {
                 const properties = JSON.parse(event.properties);
+                const additionalData = properties.additional_data;
+                
                 return (
                   <div
                     key={index}
                     className="flex items-center space-x-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg"
                   >
-     
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
                         {event.resource.attributes.title}
@@ -436,6 +437,11 @@ export default function Dashboard({
                         <span className="inline-flex items-center px-3 py-1 rounded text-sm font-semibold bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100">
                           {event.url}
                         </span>
+                        {additionalData && (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-100">
+                            channel: {additionalData}
+                          </span>
+                        )}
                         <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-600 dark:text-gray-100">
                           {properties.$browser}
                         </span>
@@ -458,7 +464,9 @@ export default function Dashboard({
 
           {/* Recent Links */}
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Recent Links</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+              Recent Links (Last 7 days)
+            </h3>
             <div className="h-[500px] overflow-y-auto pr-2 space-y-4">
               {recentLinks.map((link) => (
                 <div
