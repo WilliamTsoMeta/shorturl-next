@@ -22,22 +22,17 @@ export default function SearchPage() {
         throw new Error('No authentication token found');
       }
 
-      const body = JSON.stringify({
-        params: {
-          q: query || '',
-          type: type || ''
-        }
-      });
-
+      const params = new URLSearchParams();
+      if (query) params.append('q', query);
+      if (type) params.append('type', type);
+      
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_WINDMILL_SYNC}/typesense/search_resource`,
+        `${process.env.NEXT_PUBLIC_API_URL}/resource/search?${params.toString()}`,
         {
-          method: 'POST',
           headers: {
-            'Authorization': `Bearer ${process.env.NEXT_PUBLIC_WINDMILL}`,
+            'Authorization': `Bearer ${session.access_token}`,
             'Content-Type': 'application/json',
           },
-          body
         }
       );
 
@@ -87,11 +82,11 @@ export default function SearchPage() {
           </div>
         </div>
 
-        {results?.data && (
+        {results && (
           <div className="space-y-4">
-            <p className="text-gray-600">找到 {results.data.found} 个结果</p>
+            <p className="text-gray-600">找到 {results.found} 个结果</p>
             
-            {results.data.hits.map((hit) => (
+            {results.hits.map((hit) => (
               <div key={hit.document.id} className="border p-4 rounded">
                 <div className="flex items-start gap-4">
                   {hit.document.attributes.icon && (
@@ -103,41 +98,52 @@ export default function SearchPage() {
                   )}
                   <div>
                     <h2 className="text-xl font-semibold">
-                      {hit.document.attributes.title || '无标题'}
+                      {hit.document.attributes.title}
                     </h2>
                     <p className="text-gray-600 mt-1">
-                      {hit.document.attributes.description || '无描述'}
+                      {hit.document.attributes.description}
                     </p>
-                    {hit.document.type === 'shorturl' && (
-                      <div className="mt-2 space-y-2">
-                        {hit.document.attributes.originalUrl && (
-                          <div>
-                            <span className="text-gray-500">原始链接：</span>
-                            <a
-                              href={hit.document.attributes.originalUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-blue-500 hover:underline break-all"
-                            >
-                              {hit.document.attributes.originalUrl}
-                            </a>
-                          </div>
-                        )}
-                        {hit.document.attributes.shortUrl && (
-                          <div>
-                            <span className="text-gray-500">短链接：</span>
-                            <a
-                              href={hit.document.attributes.shortUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-blue-500 hover:underline break-all"
-                            >
-                              {hit.document.attributes.shortUrl}
-                            </a>
-                          </div>
-                        )}
-                      </div>
-                    )}
+                    <div className="mt-2 space-y-2">
+                      {hit.document.attributes.originalUrl && (
+                        <div>
+                          <span className="text-gray-500">原始链接：</span>
+                          <a
+                            href={hit.document.attributes.originalUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-500 hover:underline break-all"
+                          >
+                            {hit.document.attributes.originalUrl}
+                          </a>
+                        </div>
+                      )}
+                      {hit.document.attributes.shortUrl && (
+                        <div>
+                          <span className="text-gray-500">短链接：</span>
+                          <a
+                            href={hit.document.attributes.shortUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-500 hover:underline break-all"
+                          >
+                            {hit.document.attributes.shortUrl}
+                          </a>
+                        </div>
+                      )}
+                      {hit.document.attributes.file && (
+                        <div>
+                          <span className="text-gray-500">文件地址：</span>
+                          <a
+                            href={hit.document.attributes.file}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-500 hover:underline break-all"
+                          >
+                            {hit.document.attributes.file}
+                          </a>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
