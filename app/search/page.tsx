@@ -6,6 +6,28 @@ import { Header } from '@/components/Header';
 import { createClient } from '@/lib/supabase';
 import { toast } from 'react-hot-toast';
 
+interface SearchResponse {
+  data: SearchResult;
+  success: boolean;
+}
+
+interface SearchResult {
+  found: number;
+  hits: Array<{
+    document: {
+      id: string;
+      attributes: {
+        title: string;
+        description: string;
+        icon?: string;
+        originalUrl?: string;
+        shortUrl?: string;
+        file?: string;
+      }
+    }
+  }>;
+}
+
 export default function SearchPage() {
   const [query, setQuery] = useState('');
   const [type, setType] = useState('');
@@ -15,24 +37,22 @@ export default function SearchPage() {
   const handleSearch = async () => {
     setLoading(true);
     try {
-      const supabase = createClient();
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session?.access_token) {
-        throw new Error('No authentication token found');
-      }
-
-      const params = new URLSearchParams();
-      if (query) params.append('q', query);
-      if (type) params.append('type', type);
+      const body = JSON.stringify({
+        params: {
+          query: query || '',
+          type: type || ''
+        }
+      });
       
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/resource/search?${params.toString()}`,
+        `${process.env.NEXT_PUBLIC_WINDMILL_SYNC}/typesense/search_resource`,
         {
+          method: 'POST',
           headers: {
-            'Authorization': `Bearer ${session.access_token}`,
+            'Authorization': `Bearer ${process.env.NEXT_PUBLIC_WINDMILL}`,
             'Content-Type': 'application/json',
           },
+          body: body,
         }
       );
 
@@ -40,8 +60,8 @@ export default function SearchPage() {
         throw new Error('Search failed');
       }
 
-      const data = await response.json();
-      setResults(data);
+      const responseData: SearchResponse = await response.json();
+      setResults(responseData.data);
     } catch (error) {
       console.error('搜索出错:', error);
       toast.error('搜索失败');
@@ -82,7 +102,7 @@ export default function SearchPage() {
           </div>
         </div>
 
-        {results && (
+        {results && results.hits && (
           <div className="space-y-4">
             <p className="text-gray-600">找到 {results.found} 个结果</p>
             
