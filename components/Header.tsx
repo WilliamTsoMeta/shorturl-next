@@ -5,6 +5,13 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import { ThemeToggle } from './ThemeToggle'
+import { Button } from './ui/button'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from './ui/dropdown-menu'
 
 export function Header() {
   const pathname = usePathname()
@@ -26,6 +33,12 @@ export function Header() {
     { href: '/plugin-auth', label: 'Plugins' },
   ]
 
+  const handleLogout = async () => {
+    const client = createClient()
+    await client.auth.signOut()
+    setEmail(null)
+  }
+
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-14 max-w-screen-2xl items-center justify-between mx-auto px-4">
@@ -33,7 +46,18 @@ export function Header() {
           <nav className="flex items-center space-x-2">
             <ThemeToggle />
             {email ? (
-              <p className="text-sm text-foreground/60">{email}</p>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="text-sm text-foreground/60 hover:text-foreground/80">
+                    {email}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start">
+                  <DropdownMenuItem onClick={handleLogout}>
+                    登出
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             ) : (
               <Link
                 href="/login"
