@@ -134,9 +134,7 @@ export default function LinkList() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {loading ? (
               <div>Loading...</div>
-            ) : error ? (
-              <div className="text-red-500">{error}</div>
-            ) : resources.length === 0 ? (
+            )  : resources.length === 0 ? (
               <div>暂无链接</div>
             ) : (
               resources.map((resource) => (
