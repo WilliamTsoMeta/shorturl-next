@@ -6,6 +6,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { ThemeToggle } from '@/components/ThemeToggle'
 import { useRouter } from 'next/navigation'
+import { useTeam } from '@/lib/contexts/TeamContext'
 
 export default function Login() {
   const [email, setEmail] = useState('')
@@ -14,6 +15,7 @@ export default function Login() {
   const [error, setError] = useState('')
   const [isLogin, setIsLogin] = useState(true)
   const router = useRouter()
+  const { fetchDefaultTeam } = useTeam()
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -37,6 +39,9 @@ export default function Login() {
         const secure = process.env.NODE_ENV === 'production' ? 'Secure;' : ''
         document.cookie = `sb-access-token=${data.session.access_token}; path=/; ${secure} SameSite=Lax; max-age=${60 * 60 * 24}`
         document.cookie = `sb-refresh-token=${data.session.refresh_token}; path=/; ${secure} SameSite=Lax; max-age=${60 * 60 * 24 * 7}`
+        
+        // 登录成功后获取默认团队
+        await fetchDefaultTeam()
         
         // 使用 router.push 而不是 window.location
         router.push('/link_list')
@@ -84,26 +89,12 @@ export default function Login() {
       }
       
       if (data?.user) {
-        // 注册成功后自动登录
-        const { data: signInData, error: signInError } = await client.auth.signInWithPassword({
-          email,
-          password,
-        })
-
-        if (signInError) {
-          setError(signInError.message)
-          return
-        }
-
-        if (signInData?.session) {
-          localStorage.setItem('sb-auth-token', JSON.stringify(signInData.session))
-          
-          const secure = process.env.NODE_ENV === 'production' ? 'Secure;' : ''
-          document.cookie = `sb-access-token=${signInData.session.access_token}; path=/; ${secure} SameSite=Lax; max-age=${60 * 60 * 24}`
-          document.cookie = `sb-refresh-token=${signInData.session.refresh_token}; path=/; ${secure} SameSite=Lax; max-age=${60 * 60 * 24 * 7}`
-          
-          router.push('/link_list')
-        }
+        // 显示邮箱验证提示并重置表单
+        setError('注册成功！请查看您的邮箱并点击验证链接。')
+        setEmail('')
+        setPassword('')
+        setIsLogin(true) // 切换到登录页面
+        return
       }
     } catch (error) {
       console.error('Error signing up:', error)

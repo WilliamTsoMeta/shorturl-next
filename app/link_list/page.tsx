@@ -71,7 +71,7 @@ export default function LinkList() {
           },
           body: JSON.stringify({
             scopeType: selectedProject ? 'project' : selectedTeam ? 'team' : undefined,
-            scopeId: selectedProject || selectedTeam,
+            scopeId: selectedProject || selectedTeam || undefined,
             resourceTypes: ["shorturl"],
             resourceSortBy: "created_at",
             resourceSortOrder: "DESC",

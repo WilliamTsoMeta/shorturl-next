@@ -46,13 +46,15 @@ interface TeamContextType {
   project: TeamProject | null;
   loading: boolean;
   error: Error | null;
+  fetchDefaultTeam: () => Promise<void>;
 }
 
 const defaultContextValue: TeamContextType = {
   team: null,
   project: null,
   loading: false,
-  error: null
+  error: null,
+  fetchDefaultTeam: async () => {}
 };
 
 const TeamContext = createContext<TeamContextType>(defaultContextValue);
@@ -63,39 +65,39 @@ export function TeamProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
-  useEffect(() => {
-    async function fetchDefaultTeam() {
-      try {
-        setLoading(true);
-        const supabase = createClient();
-        const { data: { session } } = await supabase.auth.getSession();
-        
-        if (!session?.access_token) {
-          throw new Error('No access token found');
-        }
-
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/team/create-default`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session.access_token}`
-          }
-        });
-        
-        if (!response.ok) {
-          throw new Error('Failed to fetch default team');
-        }
-        const data = await response.json();
-        setTeam(data.team);
-        setProject(data.project);
-      } catch (err) {
-        setError(err as Error);
-        console.error('Error fetching team:', err);
-      } finally {
-        setLoading(false);
+  const fetchDefaultTeam = async () => {
+    try {
+      setLoading(true);
+      const supabase = createClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session?.access_token) {
+        throw new Error('No access token found');
       }
-    }
 
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/team/create-default`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch default team');
+      }
+      const data = await response.json();
+      setTeam(data.team);
+      setProject(data.project);
+    } catch (err) {
+      setError(err as Error);
+      console.error('Error fetching team:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchDefaultTeam();
   }, []);
 
@@ -103,7 +105,8 @@ export function TeamProvider({ children }: { children: ReactNode }) {
     team,
     project,
     loading,
-    error
+    error,
+    fetchDefaultTeam
   };
 
   return (
