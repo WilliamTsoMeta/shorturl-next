@@ -12,6 +12,7 @@ export default function Login() {
   const [password, setPassword] = useState('')
   const [rememberMe, setRememberMe] = useState(false)
   const [error, setError] = useState('')
+  const [isLogin, setIsLogin] = useState(true)
   const router = useRouter()
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -68,6 +69,48 @@ export default function Login() {
     }
   }
 
+  const handleSignup = async (e: React.FormEvent) => {
+    e.preventDefault()
+    const client = createClient()
+    try {
+      const { data, error } = await client.auth.signUp({
+        email,
+        password,
+      })
+      
+      if (error) {
+        setError(error.message)
+        return
+      }
+      
+      if (data?.user) {
+        // 注册成功后自动登录
+        const { data: signInData, error: signInError } = await client.auth.signInWithPassword({
+          email,
+          password,
+        })
+
+        if (signInError) {
+          setError(signInError.message)
+          return
+        }
+
+        if (signInData?.session) {
+          localStorage.setItem('sb-auth-token', JSON.stringify(signInData.session))
+          
+          const secure = process.env.NODE_ENV === 'production' ? 'Secure;' : ''
+          document.cookie = `sb-access-token=${signInData.session.access_token}; path=/; ${secure} SameSite=Lax; max-age=${60 * 60 * 24}`
+          document.cookie = `sb-refresh-token=${signInData.session.refresh_token}; path=/; ${secure} SameSite=Lax; max-age=${60 * 60 * 24 * 7}`
+          
+          router.push('/link_list')
+        }
+      }
+    } catch (error) {
+      console.error('Error signing up:', error)
+      setError('注册失败，请重试')
+    }
+  }
+
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-4 bg-white dark:bg-gray-900">
       {error && (
@@ -90,13 +133,21 @@ export default function Login() {
 
         {/* Tabs */}
         <div className="flex mb-8 border dark:border-gray-700 rounded-lg">
-          <button className="flex-1 py-2 px-4 bg-white dark:bg-gray-800 rounded-l-lg font-medium text-gray-900 dark:text-white">Log in</button>
-          <Link href="/signup" className="flex-1 py-2 px-4 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 text-center">
+          <button 
+            onClick={() => setIsLogin(true)}
+            className={`flex-1 py-2 px-4 ${isLogin ? 'bg-white dark:bg-gray-800' : ''} rounded-l-lg font-medium ${isLogin ? 'text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400'}`}
+          >
+            Log in
+          </button>
+          <button 
+            onClick={() => setIsLogin(false)}
+            className={`flex-1 py-2 px-4 ${!isLogin ? 'bg-white dark:bg-gray-800' : ''} rounded-r-lg font-medium ${!isLogin ? 'text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400'}`}
+          >
             Sign up
-          </Link>
+          </button>
         </div>
 
-        <form onSubmit={handleLogin} className="space-y-6">
+        <form onSubmit={isLogin ? handleLogin : handleSignup} className="space-y-6">
           <div>
             <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Email
@@ -145,7 +196,7 @@ export default function Login() {
             type="submit"
             className="w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
           >
-            Log in
+            {isLogin ? 'Log in' : 'Sign up'}
           </button>
 
           <button
@@ -159,10 +210,13 @@ export default function Login() {
         </form>
 
         <p className="mt-8 text-center text-sm text-gray-600 dark:text-gray-400">
-          {"Don't have an account? "}
-          <Link href="/signup" className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 font-medium">
-            Sign up
-          </Link>
+          {isLogin ? "Don't have an account? " : "Already have an account? "}
+          <button 
+            onClick={() => setIsLogin(!isLogin)} 
+            className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 font-medium"
+          >
+            {isLogin ? 'Sign up' : 'Log in'}
+          </button>
         </p>
       </div>
     </div>
