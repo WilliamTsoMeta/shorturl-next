@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -89,11 +89,10 @@ export default function Login() {
       }
       
       if (data?.user) {
-        // 显示邮箱验证提示并重置表单
         setError('注册成功！请查看您的邮箱并点击验证链接。')
         setEmail('')
         setPassword('')
-        setIsLogin(true) // 切换到登录页面
+        setIsLogin(true)
         return
       }
     } catch (error) {
@@ -101,6 +100,16 @@ export default function Login() {
       setError('注册失败，请重试')
     }
   }
+
+  useEffect(() => {
+    if (error) {
+      const timer = setTimeout(() => {
+        setError('')
+      }, 5000)
+
+      return () => clearTimeout(timer)
+    }
+  }, [error])
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-4 bg-white dark:bg-gray-900">
