@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import { ThemeToggle } from './ThemeToggle'
 import { Button } from './ui/button'
@@ -16,6 +16,7 @@ import {
 export function Header() {
   const pathname = usePathname()
   const [email, setEmail] = useState<string | null>(null)
+  const router = useRouter()
 
   useEffect(() => {
     const client = createClient()
@@ -37,6 +38,7 @@ export function Header() {
     const client = createClient()
     await client.auth.signOut()
     setEmail(null)
+    router.push('/login')
   }
 
   return (
