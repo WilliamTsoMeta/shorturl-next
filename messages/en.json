@@ -2,7 +2,8 @@
   "common": {
     "loading": "Loading...",
     "error": "An error occurred",
-    "success": "Success"
+    "success": "Success",
+    "appName": "ShortURL"
   },
   "auth": {
     "login": "Login",
@@ -18,5 +19,11 @@
     "description": "Description",
     "createdAt": "Created at",
     "clicks": "Clicks"
+  },
+  "nav": {
+    "search": "Search",
+    "linkList": "Link List",
+    "dashboard": "Dashboard",
+    "plugins": "Plugins"
   }
 }

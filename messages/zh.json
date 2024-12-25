@@ -2,7 +2,8 @@
   "common": {
     "loading": "加载中...",
     "error": "发生错误",
-    "success": "成功"
+    "success": "成功",
+    "appName": "短链接"
   },
   "auth": {
     "login": "登录",
@@ -18,5 +19,11 @@
     "description": "描述",
     "createdAt": "创建时间",
     "clicks": "点击次数"
+  },
+  "nav": {
+    "search": "搜索",
+    "linkList": "链接列表",
+    "dashboard": "仪表盘",
+    "plugins": "插件"
   }
 }

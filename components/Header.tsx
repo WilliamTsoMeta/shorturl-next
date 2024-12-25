@@ -31,10 +31,10 @@ export function Header() {
   }, [])
 
   const menuItems = [
-    { href: '/search', label: 'Search' },
-    { href: '/link_list', label: 'Links' },
-    { href: '/dashboard', label: 'Dashboard' },
-    { href: '/plugin-auth', label: 'Plugins' },
+    { href: '/search', label: t('nav.search') },
+    { href: '/link_list', label: t('nav.linkList') },
+    { href: '/dashboard', label: t('nav.dashboard') },
+    { href: '/plugin-auth', label: t('nav.plugins') },
   ]
 
   const handleLogout = async () => {
