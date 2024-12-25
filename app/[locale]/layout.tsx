@@ -14,11 +14,14 @@ export function generateStaticParams() {
 
 export default async function LocaleLayout({
   children,
-  params: { locale }
+  params,
 }: {
   children: React.ReactNode;
   params: { locale: string };
 }) {
+  const resolvedParams = await params;
+  const locale = resolvedParams.locale;
+
   let messages;
   try {
     messages = (await import(`../../messages/${locale}.json`)).default;
@@ -29,7 +32,7 @@ export default async function LocaleLayout({
   return (
     <html lang={locale} suppressHydrationWarning>
       <body className={inter.className}>
-        <NextIntlClientProvider locale={locale} messages={messages}>
+        <NextIntlClientProvider locale={locale} messages={messages} timeZone="Asia/Shanghai">
           <Providers>
             {children}
             <Toaster position="top-right" />
