@@ -12,11 +12,14 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from './ui/dropdown-menu'
+import { LanguageSwitcher } from './LanguageSwitcher'
+import { useTranslations } from 'next-intl'
 
 export function Header() {
   const pathname = usePathname()
   const [email, setEmail] = useState<string | null>(null)
   const router = useRouter()
+  const t = useTranslations()
 
   useEffect(() => {
     const client = createClient()
@@ -47,6 +50,7 @@ export function Header() {
         <div className="flex-1 flex justify-start">
           <nav className="flex items-center space-x-2">
             <ThemeToggle />
+            <LanguageSwitcher />
             {email ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -56,7 +60,7 @@ export function Header() {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="start">
                   <DropdownMenuItem onClick={handleLogout}>
-                    登出
+                    {t('auth.logout')}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -65,7 +69,7 @@ export function Header() {
                 href="/login"
                 className="text-sm font-medium text-foreground/60 hover:text-foreground/80"
               >
-                Login
+                {t('auth.login')}
               </Link>
             )}
           </nav>

@@ -1,0 +1,22 @@
+{
+  "common": {
+    "loading": "加载中...",
+    "error": "发生错误",
+    "success": "成功"
+  },
+  "auth": {
+    "login": "登录",
+    "signup": "注册",
+    "logout": "登出",
+    "email": "邮箱",
+    "password": "密码"
+  },
+  "links": {
+    "create": "创建新链接",
+    "shortUrl": "短链接",
+    "originalUrl": "原始链接",
+    "description": "描述",
+    "createdAt": "创建时间",
+    "clicks": "点击次数"
+  }
+}

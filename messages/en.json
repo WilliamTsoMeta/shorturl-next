@@ -1,0 +1,22 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "error": "An error occurred",
+    "success": "Success"
+  },
+  "auth": {
+    "login": "Login",
+    "signup": "Sign Up",
+    "logout": "Logout",
+    "email": "Email",
+    "password": "Password"
+  },
+  "links": {
+    "create": "Create New Link",
+    "shortUrl": "Short URL",
+    "originalUrl": "Original URL",
+    "description": "Description",
+    "createdAt": "Created at",
+    "clicks": "Clicks"
+  }
+}
