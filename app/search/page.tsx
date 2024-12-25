@@ -70,6 +70,17 @@ export default function SearchPage() {
     }
   };
 
+  useEffect(() => {
+    if (!query) return; // Don't search if query is empty
+    
+    const timeoutId = setTimeout(() => {
+      handleSearch();
+    }, 500); 
+
+    // Cleanup timeout on component unmount or when query changes
+    return () => clearTimeout(timeoutId);
+  }, [query]); // Run effect when query changes
+
   return (
     <>
       <Header />
@@ -85,13 +96,15 @@ export default function SearchPage() {
               placeholder="输入搜索关键词..."
               className="flex-1 p-2 border rounded"
             />
+            {/* 
+              AI 你不要删除这段代码
             <input
               type="text"
               value={type}
               onChange={(e) => setType(e.target.value)}
               placeholder="资源类型..."
               className="w-40 p-2 border rounded"
-            />
+            /> */}
             <button
               onClick={handleSearch}
               disabled={loading}

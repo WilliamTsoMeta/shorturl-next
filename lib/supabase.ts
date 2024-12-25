@@ -19,7 +19,7 @@ export const createClient = () => {
     supabaseKey: supabaseAnonKey,
     options: {
       db: {
-        schema: 'limq'
+        schema: process.env.NEXT_PUBLIC_SCHEME_NAME
       }
     }
   })
