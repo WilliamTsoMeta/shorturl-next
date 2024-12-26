@@ -67,7 +67,19 @@
     "clicksByTime": "Clicks by Time",
     "clicksByLocation": "Clicks by Location",
     "clicksByDevice": "Clicks by Device",
-    "clicksByBrowser": "Clicks by Browser"
+    "clicksByBrowser": "Clicks by Browser",
+    "totalClicks": "Total Clicks",
+    "uniqueLinks": "Unique Links",
+    "averageDailyClicks": "Average Daily Clicks",
+    "clickGrowth": "Click Growth",
+    "clickTrends": "Click Trends",
+    "trafficSources": "Traffic Sources",
+    "recentEvents": "Recent Events",
+    "recentLinks": "Recent Links ({days} days)",
+    "channel": "Channel",
+    "unknownDevice": "Unknown Device",
+    "clickCount": "{count} clicks",
+    "createdAt": "Created at"
   },
   "selectors": {
     "team": {

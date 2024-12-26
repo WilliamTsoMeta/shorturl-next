@@ -10,7 +10,10 @@
     "cancel": "取消",
     "delete": "刪除",
     "edit": "編輯",
-    "required": "必填"
+    "required": "必填",
+    "create": "建立",
+    "creating": "建立中...",
+    "reset": "重設"
   },
   "auth": {
     "login": "登入",
@@ -35,7 +38,24 @@
     "enterLongUrl": "輸入原始連結",
     "enterShortUrl": "輸入或等待自動產生",
     "loadingMeta": "載入連結資訊中...",
-    "copySuccess": "連結已複製到剪貼簿"
+    "copySuccess": "連結已複製到剪貼簿",
+    "name": "連結名稱",
+    "enterName": "輸入連結名稱",
+    "title": "標題",
+    "enterTitle": "請輸入標題",
+    "enterDescription": "請輸入描述",
+    "tags": "標籤",
+    "createTag": "建立新標籤",
+    "tagName": "標籤名稱",
+    "enterTagName": "輸入標籤名稱",
+    "qrCode": "QR Code",
+    "editQRCode": "編輯 QR Code",
+    "downloadQRCode": "下載 QR Code",
+    "previewImage": "預覽圖片",
+    "urlPreview": "連結預覽",
+    "longUrlRequired": "請輸入原始連結",
+    "shortUrlRequired": "請輸入短網址",
+    "nameRequired": "請輸入連結名稱"
   },
   "nav": {
     "search": "搜尋",
@@ -67,7 +87,19 @@
     "clicksByTime": "時間分佈",
     "clicksByLocation": "地理分佈",
     "clicksByDevice": "裝置分佈",
-    "clicksByBrowser": "瀏覽器分佈"
+    "clicksByBrowser": "瀏覽器分佈",
+    "totalClicks": "總點擊次數",
+    "uniqueLinks": "獨立連結數",
+    "averageDailyClicks": "平均每日點擊",
+    "clickGrowth": "點擊成長率",
+    "clickTrends": "點擊趨勢",
+    "trafficSources": "流量來源",
+    "recentEvents": "最近事件",
+    "recentLinks": "最近連結（{days} 天內）",
+    "channel": "管道",
+    "unknownDevice": "未知裝置",
+    "clickCount": "{count} 次點擊",
+    "createdAt": "建立時間"
   },
   "selectors": {
     "team": {
@@ -84,11 +116,11 @@
   },
   "error": {
     "required": "此欄位為必填",
-    "invalidEmail": "無效的電子郵件",
-    "invalidPassword": "密碼長度至少為 6 位",
-    "invalidUrl": "無效的網址格式",
+    "invalidEmail": "無效的電子郵件格式",
+    "invalidPassword": "密碼長度至少為6位",
+    "invalidUrl": "無效的連結格式",
     "unauthorized": "請先登入",
-    "notFound": "找不到頁面",
+    "notFound": "頁面不存在",
     "serverError": "伺服器錯誤"
   }
 }

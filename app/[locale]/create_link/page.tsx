@@ -12,18 +12,19 @@ import QRCodeStyling from "qr-code-styling";
 import QRCodeEditor from "@/components/QRCodeEditor";
 import { createPortal } from 'react-dom';
 import { Header } from '@/components/Header';
+import { useTranslations } from 'next-intl';
 
 const createLinkSchema = z.object({
   longUrl: z.string()
-    .min(1, "Long URL is required")
-    .url("Please enter a valid URL"),
-  shortUrl: z.string().min(1, "Short URL is required"),
-  name: z.string().min(1, "Link name is required"),
+    .min(1, 'Long URL is required')
+    .url('Please enter a valid URL'),
+  shortUrl: z.string().min(1, 'Short URL is required'),
+  name: z.string().min(1, 'Link name is required'),
   title: z.string().optional(),
   description: z.string().optional(),
   tags: z.array(z.string()).optional(),
-  teamId: z.string().min(1, "Team is required"),
-  projectId: z.string().min(1, "Project is required"),
+  teamId: z.string().min(1, 'Team is required'),
+  projectId: z.string().min(1, 'Project is required'),
 });
 
 type CreateLinkFormData = z.infer<typeof createLinkSchema>;
@@ -44,6 +45,7 @@ interface Tag {
 }
 
 export default function CreateLink() {
+  const t = useTranslations();
   const router = useRouter();
   const { team, project } = useTeam();
   const { teams, loading: teamsLoading } = useTeams();
@@ -370,7 +372,7 @@ export default function CreateLink() {
             <div className="flex gap-4 mb-6">
               <div className="flex-1">
                 <label htmlFor="team" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Select Team <span className="text-red-500">*</span>
+                  {t('selectors.team.label')} <span className="text-red-500">*</span>
                 </label>
                 <select
                   id="team"
@@ -383,7 +385,7 @@ export default function CreateLink() {
                   className={`block w-full px-4 pr-8 py-3 text-base rounded-lg border-gray-300 dark:border-gray-600 shadow-sm focus:border-blue-500 focus:ring-blue-500 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white ${errors.teamId ? 'border-red-500' : ''}`}
                   required
                 >
-                  <option value="">Select a team</option>
+                  <option value="">{t('selectors.team.placeholder')}</option>
                   {teams?.map((team) => (
                     <option key={team.id} value={team.id}>
                       {team.name}
@@ -397,7 +399,7 @@ export default function CreateLink() {
 
               <div className="flex-1">
                 <label htmlFor="project" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Select Project <span className="text-red-500">*</span>
+                  {t('selectors.project.label')} <span className="text-red-500">*</span>
                 </label>
                 <select
                   id="project"
@@ -407,7 +409,7 @@ export default function CreateLink() {
                   disabled={!selectedTeamId || projectsLoading}
                   required
                 >
-                  <option value="">Select a project</option>
+                  <option value="">{t('selectors.project.placeholder')}</option>
                   {projects?.map((project) => (
                     <option key={project.id} value={project.id}>
                       {project.name}
@@ -422,7 +424,7 @@ export default function CreateLink() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Long URL
+                {t('links.longUrl')}
                 <span className="text-red-500">*</span>
               </label>
               <input
@@ -430,11 +432,11 @@ export default function CreateLink() {
                 value={longUrl}
                 onChange={(e) => setLongUrl(e.target.value)}
                 className="w-full p-2 border dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-                placeholder="Enter long URL"
+                placeholder={t('links.enterLongUrl')}
                 required
               />
               {isLoadingMeta && (
-                <p className="mt-1 text-sm text-gray-500">Loading URL information...</p>
+                <p className="mt-1 text-sm text-gray-500">{t('links.loadingUrlInfo')}</p>
               )}
               {metaError && (
                 <p className="mt-1 text-sm text-red-500">{metaError}</p>
@@ -446,7 +448,7 @@ export default function CreateLink() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Short URL
+                {t('links.shortUrl')}
                 <span className="text-red-500">*</span>
               </label>
               <div className="flex">
@@ -458,7 +460,7 @@ export default function CreateLink() {
                   value={shortUrl}
                   onChange={(e) => setShortUrl(e.target.value)}
                   className="w-full p-2 border dark:border-gray-600 rounded-r-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-                  placeholder="输入或等待自动生成"
+                  placeholder={t('links.enterShortUrl')}
                   required
                 />
               </div>
@@ -470,12 +472,12 @@ export default function CreateLink() {
             <div className="relative mt-4">
               <div className="border dark:border-gray-700 rounded-lg p-4">
                 <div className="flex justify-between items-start mb-2">
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">QR Code</h3>
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">{t('links.qrCode')}</h3>
                   <button
                     onClick={() => setIsQRModalOpen(true)}
                     className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
                   >
-                    <span className="sr-only">Edit QR Code</span>
+                    <span className="sr-only">{t('links.editQRCode')}</span>
                     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                     </svg>
@@ -494,7 +496,7 @@ export default function CreateLink() {
                     <svg className="-ml-1 mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                     </svg>
-                    Download QR Code
+                    {t('links.downloadQRCode')}
                   </button>
                 </div>
               </div>
@@ -502,7 +504,7 @@ export default function CreateLink() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Link Name
+                {t('links.name')}
                 <span className="text-red-500">*</span>
               </label>
               <input
@@ -510,7 +512,7 @@ export default function CreateLink() {
                 value={shareName}
                 onChange={(e) => setShareName(e.target.value)}
                 className="w-full p-2 border dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-                placeholder="Enter link name"
+                placeholder={t('links.enterName')}
                 required
               />
               {errors.name && (
@@ -520,7 +522,7 @@ export default function CreateLink() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Tags
+                {t('links.tags')}
               </label>
               <div className="flex flex-wrap gap-2 mb-2">
                 {tags.map((tag) => (
@@ -549,20 +551,20 @@ export default function CreateLink() {
                 onClick={() => setIsCreateTagModalOpen(true)}
                 className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
               >
-                + Create New Tag
+                + {t('links.createTag')}
               </button>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Title
+                {t('links.title')}
               </label>
               <input
                 type="text"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 className="w-full p-2 border dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-                placeholder="Please enter..."
+                placeholder={t('links.enterTitle')}
                 maxLength={120}
               />
               <div className="text-right text-sm text-gray-500 dark:text-gray-400">{title.length}/120</div>
@@ -573,13 +575,13 @@ export default function CreateLink() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Description
+                {t('links.description')}
               </label>
               <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 className="w-full p-2 border dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-                placeholder="Please enter..."
+                placeholder={t('links.enterDescription')}
                 rows={4}
                 maxLength={240}
               />
@@ -592,12 +594,12 @@ export default function CreateLink() {
             {imageUrl && (
               <div className="mt-4">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Preview Image
+                  {t('links.previewImage')}
                 </label>
                 <div className="relative w-full h-48 border dark:border-gray-600 rounded-md overflow-hidden">
                   <img
                     src={imageUrl}
-                    alt="URL preview"
+                    alt={t('links.urlPreview')}
                     className="w-full h-full object-cover"
                   />
                   <button
@@ -619,14 +621,14 @@ export default function CreateLink() {
                 onClick={() => router.back()}
                 className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700"
               >
-                Cancel
+                {t('common.cancel')}
               </button>
               <div className="flex space-x-4">
                 <button
                   type="reset"
                   className="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-md transition-colors"
                 >
-                  Reset
+                  {t('common.reset')}
                 </button>
                 <button
                   type="submit"
@@ -635,7 +637,7 @@ export default function CreateLink() {
                     isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
                   }`}
                 >
-                  {isSubmitting ? 'Creating...' : 'Create'}
+                  {isSubmitting ? t('common.creating') : t('common.create')}
                 </button>
               </div>
             </div>
@@ -645,7 +647,7 @@ export default function CreateLink() {
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-96">
               <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">Create New Tag</h3>
+                <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">{t('links.createTag')}</h3>
                 <button onClick={() => setIsCreateTagModalOpen(false)} className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M6 18L18 6M6 6l12 12" />
@@ -656,14 +658,14 @@ export default function CreateLink() {
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Tag Name
+                    {t('links.tagName')}
                   </label>
                   <input
                     type="text"
                     value={newTag.name}
                     onChange={(e) => setNewTag({...newTag, name: e.target.value})}
                     className="w-full p-2 border dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-                    placeholder="Enter tag name"
+                    placeholder={t('links.enterTagName')}
                   />
                 </div>
 
@@ -672,7 +674,7 @@ export default function CreateLink() {
                     onClick={() => setIsCreateTagModalOpen(false)}
                     className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700"
                   >
-                    Cancel
+                    {t('common.cancel')}
                   </button>
                   <button
                     onClick={async () => {
@@ -727,7 +729,7 @@ export default function CreateLink() {
                     }}
                     className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
                   >
-                    Create
+                    {t('common.create')}
                   </button>
                 </div>
               </div>

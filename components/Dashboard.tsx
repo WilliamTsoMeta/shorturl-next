@@ -2,14 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import { useTheme } from 'next-themes';
-import { Menu, Transition } from '@headlessui/react';
-import DatePicker from 'react-datepicker';
+
 import { createClient } from '@/lib/supabase';
 import { subDays, startOfDay, startOfYear } from 'date-fns';
-import { toast } from 'react-hot-toast';
-import { useTeams } from '@/lib/hooks/useTeams';
-import { useProjects } from '@/lib/hooks/useProjects';
-import Header from '@/components/Header';
+
+import { useTranslations } from 'next-intl';
 import {
   LineChart,
   Line,
@@ -170,7 +167,8 @@ export default function Dashboard({
   isLoading,
   dateRange
 }: DashboardProps) {
-  const { theme } = useTheme()
+  const { theme } = useTheme();
+  const t = useTranslations();
   const [loading, setLoading] = useState(isLoading ?? true)
   const [dashboardData, setDashboardData] = useState<EventData | null>(data ?? null)
   const [recentLinks, setRecentLinks] = useState<Resource[]>([]);
@@ -264,22 +262,22 @@ export default function Dashboard({
         {/* Overview Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <DashboardCard
-            title="Total Clicks"
+            title={t('analytics.totalClicks')}
             value={dashboardData?.statistics?.total_clicks ?? 0}
             loading={loading}
           />
           <DashboardCard
-            title="Unique Links"
+            title={t('analytics.uniqueLinks')}
             value={dashboardData?.events?.length ?? 0}
             loading={loading}
           />
           <DashboardCard
-            title="Average Daily Clicks"
+            title={t('analytics.averageDailyClicks')}
             value={calculateAverageDailyClicks(dashboardData?.statistics)}
             loading={loading}
           />
           <DashboardCard
-            title="Click Growth"
+            title={t('analytics.clickGrowth')}
             value={`${dashboardData?.statistics?.total_clicks ?? 0}%`}
             trend={dashboardData?.statistics?.total_clicks ?? 0}
             loading={loading}
@@ -288,7 +286,7 @@ export default function Dashboard({
 
         {/* Charts */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          <ChartCard title="Click Trends">
+          <ChartCard title={t('analytics.clickTrends')}>
             <div className="h-80">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={dashboardData?.statistics?.hourly_clicks ?? []}>
@@ -307,7 +305,7 @@ export default function Dashboard({
             </div>
           </ChartCard>
 
-          <ChartCard title="Traffic Sources">
+          <ChartCard title={t('analytics.trafficSources')}>
             <div className="h-80">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
@@ -340,7 +338,9 @@ export default function Dashboard({
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Recent Events */}
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Recent Events</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+              {t('analytics.recentEvents')}
+            </h3>
             <div className="h-[500px] overflow-y-auto pr-2 space-y-4">
               {dashboardData?.events.map((event, index) => {
                 const properties = JSON.parse(event.properties);
@@ -361,7 +361,7 @@ export default function Dashboard({
                         </span>
                         {additionalData && (
                           <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-100">
-                            channel: {additionalData}
+                            {t('analytics.channel')}: {additionalData}
                           </span>
                         )}
                         <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-600 dark:text-gray-100">
@@ -371,7 +371,7 @@ export default function Dashboard({
                           {properties.$os}
                         </span>
                         <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-600 dark:text-gray-100">
-                          {properties.$device || 'Unknown Device'}
+                          {properties.$device || t('analytics.unknownDevice')}
                         </span>
                       </div>
                       <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
@@ -387,7 +387,7 @@ export default function Dashboard({
           {/* Recent Links */}
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-              Recent Links (Last 7 days)
+              {t('analytics.recentLinks', { days: 7 })}
             </h3>
             <div className="h-[500px] overflow-y-auto pr-2 space-y-4">
               {recentLinks.map((link) => (
@@ -395,7 +395,6 @@ export default function Dashboard({
                   key={link.id}
                   className="flex items-center space-x-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg"
                 >
-                 
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
                       {link.attributes.title}
@@ -405,11 +404,11 @@ export default function Dashboard({
                         {link.attributes.shortUrl}
                       </span>
                       <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-600 dark:text-gray-100">
-                        {link.attributes.click_count} clicks
+                        {t('analytics.clickCount', { count: link.attributes.click_count })}
                       </span>
                     </div>
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                      Created at: {new Date(link.attributes.created_at).toLocaleString()}
+                      {t('analytics.createdAt')}: {new Date(link.attributes.created_at).toLocaleString()}
                     </p>
                   </div>
                 </div>

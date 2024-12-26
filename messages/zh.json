@@ -10,7 +10,10 @@
     "cancel": "取消",
     "delete": "删除",
     "edit": "编辑",
-    "required": "必填"
+    "required": "必填",
+    "create": "创建",
+    "creating": "创建中...",
+    "reset": "重置"
   },
   "auth": {
     "login": "登录",
@@ -35,7 +38,24 @@
     "enterLongUrl": "输入原始链接",
     "enterShortUrl": "输入或等待自动生成",
     "loadingMeta": "加载链接信息中...",
-    "copySuccess": "链接已复制到剪贴板"
+    "copySuccess": "链接已复制到剪贴板",
+    "name": "链接名称",
+    "enterName": "输入链接名称",
+    "title": "标题",
+    "enterTitle": "请输入标题",
+    "enterDescription": "请输入描述",
+    "tags": "标签",
+    "createTag": "创建新标签",
+    "tagName": "标签名称",
+    "enterTagName": "输入标签名称",
+    "qrCode": "二维码",
+    "editQRCode": "编辑二维码",
+    "downloadQRCode": "下载二维码",
+    "previewImage": "预览图片",
+    "urlPreview": "链接预览",
+    "longUrlRequired": "请输入原始链接",
+    "shortUrlRequired": "请输入短链接",
+    "nameRequired": "请输入链接名称"
   },
   "nav": {
     "search": "搜索",
@@ -67,7 +87,19 @@
     "clicksByTime": "时间分布",
     "clicksByLocation": "地理分布",
     "clicksByDevice": "设备分布",
-    "clicksByBrowser": "浏览器分布"
+    "clicksByBrowser": "浏览器分布",
+    "totalClicks": "总点击次数",
+    "uniqueLinks": "独立链接数",
+    "averageDailyClicks": "平均每日点击",
+    "clickGrowth": "点击增长率",
+    "clickTrends": "点击趋势",
+    "trafficSources": "流量来源",
+    "recentEvents": "最近事件",
+    "recentLinks": "最近链接（{days} 天内）",
+    "channel": "渠道",
+    "unknownDevice": "未知设备",
+    "clickCount": "{count} 次点击",
+    "createdAt": "创建时间"
   },
   "selectors": {
     "team": {
@@ -81,5 +113,14 @@
     "dateRange": {
       "label": "日期范围"
     }
+  },
+  "error": {
+    "required": "此字段为必填",
+    "invalidEmail": "无效的邮箱格式",
+    "invalidPassword": "密码长度至少为6位",
+    "invalidUrl": "无效的链接格式",
+    "unauthorized": "请先登录",
+    "notFound": "页面不存在",
+    "serverError": "服务器错误"
   }
 }
