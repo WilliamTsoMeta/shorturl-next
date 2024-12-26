@@ -10,7 +10,15 @@ export function LanguageSwitcher() {
   const pathname = usePathname();
 
   const handleChange = (newLocale: string) => {
-    router.replace(`/${newLocale}${pathname}`);
+    // 从路径中移除当前的 locale 前缀
+    const segments = pathname.split('/');
+    const pathWithoutLocale = segments.length > 1 && locales.includes(segments[1] as any) 
+      ? '/' + segments.slice(2).join('/')
+      : pathname;
+    
+    // 构建新的路径
+    const newPath = `/${newLocale}${pathWithoutLocale}`;
+    router.replace(newPath);
   };
 
   return (
@@ -21,7 +29,18 @@ export function LanguageSwitcher() {
     >
       {locales.map((loc) => (
         <option key={loc} value={loc}>
-          {loc === 'en' ? 'English' : '中文'}
+          {(() => {
+            switch(loc) {
+              case 'en':
+                return 'English';
+              case 'zh':
+                return '简体中文';
+              case 'zh-Hant':
+                return '正體中文';
+              default:
+                return loc;
+            }
+          })()}
         </option>
       ))}
     </select>
