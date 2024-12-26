@@ -3,27 +3,83 @@
     "loading": "Loading...",
     "error": "An error occurred",
     "success": "Success",
-    "appName": "ShortURL"
+    "appName": "ShortURL",
+    "copy": "Copy",
+    "copied": "Copied!",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "required": "Required"
   },
   "auth": {
     "login": "Login",
     "signup": "Sign Up",
     "logout": "Logout",
     "email": "Email",
-    "password": "Password"
+    "password": "Password",
+    "googleLogin": "Login with Google",
+    "registerSuccess": "Registration successful! Please check your email and click the verification link.",
+    "loginError": "Login failed, please try again",
+    "googleLoginError": "Google login failed, please try again"
   },
   "links": {
-    "create": "Create New Link",
+    "create": "Create Link",
+    "list": "Link List",
     "shortUrl": "Short URL",
-    "originalUrl": "Original URL",
+    "longUrl": "Long URL",
     "description": "Description",
     "createdAt": "Created at",
-    "clicks": "Clicks"
+    "clicks": "Clicks",
+    "analytics": "Analytics",
+    "enterLongUrl": "Enter long URL",
+    "enterShortUrl": "Enter or wait for auto-generation",
+    "loadingMeta": "Loading URL information...",
+    "copySuccess": "Link copied to clipboard"
   },
   "nav": {
     "search": "Search",
     "linkList": "Link List",
     "dashboard": "Dashboard",
     "plugins": "Plugins"
+  },
+  "search": {
+    "title": "Resource Search",
+    "placeholder": "Enter search keywords...",
+    "button": "Search",
+    "results": "{count} results found",
+    "noResults": "No results found",
+    "type": {
+      "shorturl": "Short URL",
+      "file": "File",
+      "shareCollection": "Share Collection"
+    }
+  },
+  "analytics": {
+    "title": "Analytics",
+    "period": "Time Period",
+    "today": "Today",
+    "last7days": "Last 7 days",
+    "last30days": "Last 30 days",
+    "custom": "Custom Range",
+    "clicks": "Clicks",
+    "uniqueClicks": "Unique Clicks",
+    "clicksByTime": "Clicks by Time",
+    "clicksByLocation": "Clicks by Location",
+    "clicksByDevice": "Clicks by Device",
+    "clicksByBrowser": "Clicks by Browser"
+  },
+  "selectors": {
+    "team": {
+      "label": "Team",
+      "placeholder": "Select team"
+    },
+    "project": {
+      "label": "Project",
+      "placeholder": "Select project"
+    },
+    "dateRange": {
+      "label": "Date Range"
+    }
   }
 }

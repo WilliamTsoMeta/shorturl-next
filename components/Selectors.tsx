@@ -1,5 +1,6 @@
 import { useTeams } from '@/lib/hooks/useTeams'
 import { useProjects } from '@/lib/hooks/useProjects'
+import { useTranslations } from 'next-intl'
 import DatePicker from 'react-datepicker'
 import "react-datepicker/dist/react-datepicker.css"
 
@@ -22,7 +23,8 @@ const Selectors = ({
 }: SelectorsProps) => {
   const { teams, loading: teamsLoading } = useTeams()
   const { projects, loading: projectsLoading } = useProjects(selectedTeam)
-  const [startDate, endDate] = dateRange || [null, null];
+  const [startDate, endDate] = dateRange || [null, null]
+  const t = useTranslations()
 
   const handleTeamChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const teamId = e.target.value || null
@@ -39,7 +41,7 @@ const Selectors = ({
     <div className="flex flex-col sm:flex-row gap-4 mb-6">
       <div className="flex-1">
         <label htmlFor="team" className="block text-sm font-medium text-gray-700 dark:text-gray-200">
-          Team
+          {t('selectors.team.label')}
         </label>
         <select
           id="team"
@@ -48,7 +50,7 @@ const Selectors = ({
           disabled={teamsLoading}
           className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
         >
-          <option value="">Select team</option>
+          <option value="">{t('selectors.team.placeholder')}</option>
           {teams?.map((team) => (
             <option key={team.id} value={team.id}>
               {team.name}
@@ -59,7 +61,7 @@ const Selectors = ({
 
       <div className="flex-1">
         <label htmlFor="project" className="block text-sm font-medium text-gray-700 dark:text-gray-200">
-          Project
+          {t('selectors.project.label')}
         </label>
         <select
           id="project"
@@ -68,7 +70,7 @@ const Selectors = ({
           disabled={projectsLoading || !selectedTeam}
           className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
         >
-          <option value="">Select project</option>
+          <option value="">{t('selectors.project.placeholder')}</option>
           {projects?.map((project) => (
             <option key={project.id} value={project.id}>
               {project.name}
@@ -80,7 +82,7 @@ const Selectors = ({
       {dateRange && onDateRangeChange && (
         <div className="flex-1">
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
-            Date Range
+            {t('selectors.dateRange.label')}
           </label>
           <DatePicker
             selectsRange={true}
