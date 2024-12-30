@@ -89,6 +89,7 @@ export function TeamProvider({ children }: { children: ReactNode }) {
       const data = await response.json();
       setTeam(data.team);
       setProject(data.project);
+      console.log('defaut team prj',data )
     } catch (err) {
       setError(err as Error);
       console.error('Error fetching team:', err);

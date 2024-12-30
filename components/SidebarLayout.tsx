@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Sidebar from './Sidebar';
+import { createClient } from '@/lib/supabase';
+import { useTeam } from '@/lib/contexts/TeamContext';
 
 export default function SidebarLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -10,7 +12,9 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
   const [messages, setMessages] = useState<Array<{ text: string; isUser: boolean; action?: string | null }>>([]);
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [jobId, setJobId] = useState<string | null>(null);
   const [currentStreamingMessage, setCurrentStreamingMessage] = useState<string>('');
+  const { team, project } = useTeam();
 
   // 处理流式响应
   async function handleStreamingResponse(response: Response) {
@@ -63,6 +67,20 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
 
   // 触发异步任务
   async function triggerAsyncJob(userInput: string) {
+    const client = createClient();
+    const { data: { session } } = await client.auth.getSession();
+
+    if (!session?.access_token) {
+      throw new Error('No access token found. Please login first.');
+    }
+
+
+    // 确保有team和project
+    if (!team?.id || !project?.id) {
+      console.log('team', team)
+      throw new Error('No team or project found. Please try again.');
+    }
+
     const endpoint = `${process.env.NEXT_PUBLIC_WINDMILL_ASYNC}/dify/generate_shorturl`;
     
     const response = await fetch(endpoint, {
@@ -72,7 +90,11 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
         "Authorization": `Bearer ${process.env.NEXT_PUBLIC_WINDMILL}`
       },
       body: JSON.stringify({
-        "user_input": userInput
+        "user_input": userInput,
+        "token": session.access_token,
+        "teamId": team.id,
+        "projectId": project.id,
+        "tagIds": []
       })
     });
 

@@ -4,6 +4,7 @@ import { NextIntlClientProvider } from 'next-intl';
 import { locales } from '@/lib/i18n/settings';
 import { Providers } from '../providers';
 import { Toaster } from 'react-hot-toast';
+import SidebarLayout from '@/components/SidebarLayout';
 import "../globals.css";
 
 const inter = Inter({ subsets: ['latin'] });
@@ -34,7 +35,9 @@ export default async function LocaleLayout({
       <body className={inter.className}>
         <NextIntlClientProvider locale={locale} messages={messages} timeZone="Asia/Shanghai">
           <Providers>
-            {children}
+            <SidebarLayout>
+              {children}
+            </SidebarLayout>
             <Toaster position="top-right" />
           </Providers>
         </NextIntlClientProvider>
