@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Sidebar from './Sidebar';
 import { createClient } from '@/lib/supabase';
 import { useTeam } from '@/lib/contexts/TeamContext';
+import ReactMarkdown from 'react-markdown';
 
 export default function SidebarLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -136,10 +137,22 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
         event.event === 'workflow_finished' && event.data?.outputs?.text
       );
       
-      if (finishedEvent) {
+      if (finishedEvent && finishedEvent.data.status === 'succeeded') {
+        // 如果当前在 link_list 页面，触发刷新
+        if (window.location.pathname.includes('/link_list')) {
+          setTimeout(() => {
+            window.location.reload();
+          }, 10000);
+        } else {
+          // 否则 3 秒后跳转
+          setTimeout(() => {
+            router.push('/link_list');
+          }, 10000);
+        }
+        
         return {
-          text: finishedEvent.data.outputs.text,
-          action: null // 如果需要处理action，可以从这里添加
+          text: finishedEvent.data.outputs.text + '\n\n10秒后将跳转到链接列表页...',
+          action: 'link_list'
         };
       }
 
@@ -150,13 +163,16 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
 
       if (lastTextEvent) {
         return {
-          text: lastTextEvent.data.outputs?.text || lastTextEvent.data.text,
+          text: lastTextEvent.data?.outputs?.text || lastTextEvent.data?.text,
           action: null
         };
       }
     }
 
-    throw new Error('No valid message found in response');
+    return {
+      text: '无法获取结果',
+      action: null
+    };
   }
 
   // 轮询任务结果
@@ -244,10 +260,10 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
 
       <button
         onClick={() => setIsSidebarOpen(true)}
-        className="fixed bottom-4 right-4 bg-indigo-600 text-white rounded-full p-3 shadow-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+        className="fixed p-3 text-white bg-indigo-600 rounded-full shadow-lg bottom-4 right-4 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
       >
         <svg
-          className="h-6 w-6"
+          className="w-6 h-6"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -267,7 +283,7 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
       >
         <div className="flex flex-col h-full">
           {/* 消息列表区域 */}
-          <div className="flex-1 overflow-y-auto space-y-4 mb-4 p-4">
+          <div className="flex-1 p-4 mb-4 space-y-4 overflow-y-auto">
             {messages.map((message, index) => (
               <div
                 key={index}
@@ -277,13 +293,39 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
                   onClick={() => handleMessageClick(message.action)}
                   className={`max-w-[80%] rounded-lg p-3 ${
                     message.isUser
-                      ? 'bg-indigo-600 text-white'
-                      : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100'
+                      ? 'bg-indigo-600 text-white markdown-user'
+                      : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100 markdown-bot'
                   } ${!message.isUser && message.action ? 'cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600' : ''}`}
                 >
-                  {message.text}
+                  {message.isUser ? (
+                    message.text
+                  ) : (
+                    <ReactMarkdown 
+                      components={{
+                        // 自定义链接样式
+                        a: ({node, ...props}) => (
+                          <a 
+                            {...props} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-blue-500 underline hover:text-blue-600"
+                          />
+                        ),
+                        // 自定义列表样式
+                        ul: ({node, ...props}) => (
+                          <ul {...props} className="my-2 ml-4 list-disc" />
+                        ),
+                        // 自定义粗体样式
+                        strong: ({node, ...props}) => (
+                          <strong {...props} className="font-bold" />
+                        ),
+                      }}
+                    >
+                      {message.text}
+                    </ReactMarkdown>
+                  )}
                   {!message.isUser && message.action && (
-                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                       点击跳转 →
                     </div>
                   )}
@@ -294,15 +336,34 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
             {currentStreamingMessage && (
               <div className="flex justify-start">
                 <div className="max-w-[80%] rounded-lg p-3 bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100">
-                  {currentStreamingMessage}
+                  <ReactMarkdown
+                    components={{
+                      a: ({node, ...props}) => (
+                        <a 
+                          {...props} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-blue-500 underline hover:text-blue-600"
+                        />
+                      ),
+                      ul: ({node, ...props}) => (
+                        <ul {...props} className="my-2 ml-4 list-disc" />
+                      ),
+                      strong: ({node, ...props}) => (
+                        <strong {...props} className="font-bold" />
+                      ),
+                    }}
+                  >
+                    {currentStreamingMessage}
+                  </ReactMarkdown>
                 </div>
               </div>
             )}
             {/* Loading indicator */}
             {isLoading && !currentStreamingMessage && (
               <div className="flex justify-start">
-                <div className="bg-gray-100 dark:bg-gray-700 rounded-lg p-3">
-                  <div className="flex space-x-2 items-center">
+                <div className="p-3 bg-gray-100 rounded-lg dark:bg-gray-700">
+                  <div className="flex items-center space-x-2">
                     <div className="w-2 h-2 bg-indigo-600 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
                     <div className="w-2 h-2 bg-indigo-600 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
                     <div className="w-2 h-2 bg-indigo-600 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
@@ -313,7 +374,7 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
           </div>
 
           {/* 输入框区域 */}
-          <div className="border-t border-gray-200 dark:border-gray-700 p-4">
+          <div className="p-4 border-t border-gray-200 dark:border-gray-700">
             <div className="flex space-x-2">
               <textarea
                 value={inputText}
