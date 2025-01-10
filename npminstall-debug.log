@@ -3,7 +3,7 @@
   registry: 'https://registry.npmmirror.com',
   pkgs: [
     {
-      name: '@loskir/styled-qr-code',
+      name: '@windmill/api-client',
       version: 'latest',
       type: 'tag',
       alias: undefined,
@@ -15,7 +15,7 @@
   cacheDir: '/Users/liam/.npminstall_tarball',
   env: {
     npm_config_registry: 'https://registry.npmmirror.com',
-    npm_config_argv: '{"remain":[],"cooked":["--fix-bug-versions","--china","--userconfig=/Users/liam/.cnpmrc","--disturl=https://cdn.npmmirror.com/binaries/node","--registry=https://registry.npmmirror.com","@loskir/styled-qr-code"],"original":["--fix-bug-versions","--china","--userconfig=/Users/liam/.cnpmrc","--disturl=https://cdn.npmmirror.com/binaries/node","--registry=https://registry.npmmirror.com","@loskir/styled-qr-code"]}',
+    npm_config_argv: '{"remain":[],"cooked":["--fix-bug-versions","--china","--userconfig=/Users/liam/.cnpmrc","--disturl=https://cdn.npmmirror.com/binaries/node","--registry=https://registry.npmmirror.com","@windmill/api-client"],"original":["--fix-bug-versions","--china","--userconfig=/Users/liam/.cnpmrc","--disturl=https://cdn.npmmirror.com/binaries/node","--registry=https://registry.npmmirror.com","@windmill/api-client"]}',
     npm_config_user_agent: 'npminstall/7.12.0 npm/? node/v22.5.1 darwin arm64',
     npm_config_cache: '/Users/liam/.npminstall_tarball',
     NODE: '/Users/liam/.nvm/versions/node/v22.5.1/bin/node',
