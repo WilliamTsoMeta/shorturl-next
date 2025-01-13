@@ -24,12 +24,12 @@ export default function Sidebar({ isOpen, onClose, children }: SidebarProps) {
           leaveFrom="opacity-100"
           leaveTo="opacity-0"
         >
-          <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" />
+          <div className="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75" />
         </Transition.Child>
 
         <div className="fixed inset-0 overflow-hidden">
           <div className="absolute inset-0 overflow-hidden">
-            <div className="pointer-events-none fixed inset-y-0 right-0 flex max-w-full pl-10">
+            <div className="fixed inset-y-0 right-0 flex max-w-full pl-10 pointer-events-none">
               <Transition.Child
                 as={Fragment}
                 enter="transform transition ease-in-out duration-500"
@@ -39,28 +39,31 @@ export default function Sidebar({ isOpen, onClose, children }: SidebarProps) {
                 leaveFrom="translate-x-0"
                 leaveTo="translate-x-full"
               >
-                <Dialog.Panel className="pointer-events-auto w-screen max-w-md">
-                  <div className="flex h-full flex-col overflow-y-scroll bg-white dark:bg-gray-800 shadow-xl">
-                    <div className="px-4 sm:px-6 py-6">
-                      <div className="flex items-start justify-between">
-                        <Dialog.Title className="text-lg font-medium text-gray-900 dark:text-gray-100">
-                          对话框
-                        </Dialog.Title>
-                        <div className="ml-3 flex h-7 items-center">
-                          <button
-                            type="button"
-                            className="rounded-md text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                            onClick={onClose}
-                          >
-                            <span className="sr-only">关闭面板</span>
-                            <XMarkIcon className="h-6 w-6" aria-hidden="true" />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="relative flex-1 px-4 sm:px-6">
-                      {children}
-                    </div>
+                <Dialog.Panel className="w-screen max-w-md pointer-events-auto">
+                  <div
+                    className={`fixed inset-y-0 right-0 w-[40%] bg-white dark:bg-gray-800 shadow-lg transform transition-transform duration-300 ease-in-out ${
+                      isOpen ? 'translate-x-0' : 'translate-x-full'
+                    }`}
+                  >
+                    {children}
+                    <button
+                      onClick={onClose}
+                      className="absolute text-gray-500 top-4 right-4 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                    >
+                      <svg
+                        className="w-6 h-6"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M6 18L18 6M6 6l12 12"
+                        />
+                      </svg>
+                    </button>
                   </div>
                 </Dialog.Panel>
               </Transition.Child>

@@ -31,6 +31,25 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
     const decoder = new TextDecoder();
     let buffer = '';
 
+    function formatEventMessage(eventData: any) {
+      switch (eventData.event) {
+        case 'workflow_started':
+          return `开始处理任务`;
+        case 'node_started':
+          return `开始节点: ${eventData.data.title || '未命名节点'}`;
+        case 'node_completed':
+          return `完成节点: ${eventData.data.title || '未命名节点'}`;
+        case 'workflow_completed':
+          return `任务处理完成`;
+        case 'message':
+          return eventData.data.title || eventData.data.message || '处理中...';
+        case 'error':
+          return `错误: ${eventData.error}`;
+        default:
+          return eventData.data.title || '处理中...';
+      }
+    }
+
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
@@ -43,25 +62,12 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
         if (line.trim() && line.startsWith('data: ')) {
           try {
             const eventData = JSON.parse(line.slice(6));
+            const message = formatEventMessage(eventData);
             
-            // 处理不同类型的事件
-            if (eventData.event === 'workflow_started') {
-              setCurrentStreamingMessage('');
-            } else if (eventData.event === 'node_finished') {
-              if (eventData.data.outputs?.text) {
-                setCurrentStreamingMessage(prev => prev + eventData.data.outputs.text);
-              }
-            } else if (eventData.event === 'workflow_finished') {
-              // 工作流完成时，将累积的消息添加到消息列表
-              if (currentStreamingMessage) {
-                setMessages(prev => [...prev, {
-                  text: currentStreamingMessage,
-                  isUser: false,
-                  action: eventData.data.outputs?.action
-                }]);
-                setCurrentStreamingMessage('');
-              }
-            }
+            setMessages(prev => [...prev, {
+              text: `📝 ${message}`,
+              isUser: false
+            }]);
           } catch (e) {
             console.error('解析事件失败:', e);
           }
@@ -112,129 +118,21 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
     return jobId;
   }
 
-  // 检查任务结果
-  async function checkJobResult(jobId: string) {
-    const endpoint = `https://wm.uppeta.com/api/w/uppeta/jobs_u/completed/get_result_maybe/${jobId}`;
-    
-    const response = await fetch(endpoint, {
-      method: 'GET',
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${process.env.NEXT_PUBLIC_WINDMILL}`
-      }
-    });
-
-    if (!response.ok) {
-      throw new Error(`Failed to check job status: ${response.status}`);
-    }
-
-    const result = await response.json();
-    return result;
-  }
-
-  // 从结果中提取消息
-  function extractMessageFromResult(result: any) {
-    if (result?.result) {
-      const events = result.result;
-      // 找到最后一个 workflow_finished 事件
-      const finishedEvent = events.find((event: any) => 
-        event.event === 'workflow_finished' && event.data?.outputs?.text
-      );
-      
-      if (finishedEvent && finishedEvent.data.status === 'succeeded') {
-        // 重置跳转状态
-        setShouldRedirect(true);
-        
-        // 如果当前在 link_list 页面，触发刷新
-        if (window.location.pathname.includes('/link_list')) {
-          if (shouldRedirect) {
-            setTimeout(() => {
-              window.location.reload();
-            }, 10000);
-          }
-        } else {
-          // 否则 3 秒后跳转
-          if (shouldRedirect) {
-            setTimeout(() => {
-              router.push('/link_list');
-            }, 10000);
-          }
-        }
-        
-        return {
-          text: finishedEvent.data.outputs.text + '\n\n10秒后将跳转到链接列表页...',
-          action: 'link_list'
-        };
-      }
-
-      // 如果没有找到 workflow_finished，尝试找最后一个有文本输出的节点
-      const lastTextEvent = events.reverse().find((event: any) => 
-        event.data?.outputs?.text || event.data?.text
-      );
-
-      if (lastTextEvent) {
-        return {
-          text: lastTextEvent.data?.outputs?.text || lastTextEvent.data?.text,
-          action: null
-        };
-      }
-    }
-
-    return {
-      text: '无法获取结果',
-      action: null
-    };
-  }
-
-  // 轮询任务结果
-  async function pollJobResult(jobId: string, maxAttempts = 120) {
-    let attempts = 0;
-    
-    while (attempts < maxAttempts) {
-      try {
-        const result = await checkJobResult(jobId);
-        
-        if (result.completed) {
-          return result;
-        }
-        
-        // 等待1秒后再次尝试
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        attempts++;
-      } catch (error) {
-        console.error('Poll error:', error);
-        throw error;
-      }
-    }
-    
-    throw new Error('任务处理超时，请稍后在链接列表中查看结果');
-  }
-
   const handleResponse = async (userInput: string) => {
     setIsLoading(true);
     try {
-      let jobId;
-      
       if (selectedFile) {
-        // 如果有文件，使用批量处理接口
-        jobId = await triggerAsyncJobWithFile(userInput, selectedFile);
+        // 文件上传处理
+        const response = await triggerAsyncJobWithFile(userInput, selectedFile);
+        await handleStreamingResponse(response);
       } else {
-        // 原有的无文件处理逻辑
-        jobId = await triggerAsyncJob(userInput);
+        // 普通文本消息处理
+        setMessages(prev => [...prev, { 
+          text: userInput, 
+          isUser: true 
+        }]);
+        // 这里添加普通文本消息的处理逻辑
       }
-
-      console.log('获取到 Job ID:', jobId);
-      const result = await pollJobResult(jobId);
-      // 3. 提取并处理消息
-      const message = extractMessageFromResult(result);
-      
-      // 4. 更新消息列表
-      setMessages(prev => [...prev, {
-        text: message.text,
-        isUser: false,
-        action: message.action
-      }]);
-
     } catch (error) {
       console.error('完整错误信息:', error);
       setMessages(prev => [...prev, { 
@@ -243,15 +141,18 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
       }]);
     } finally {
       setIsLoading(false);
-      setSelectedFile(null); // 清除已选文件
-      setUploadProgress(0);
+      setSelectedFile(null);  // 重置文件选择
+      setUploadProgress(0);   // 重置上传进度
+      setInputText('');      // 重置输入框
     }
   };
 
   const handleSendMessage = async () => {
-    if (inputText.trim() && !isLoading) {
+    if ((inputText.trim() || selectedFile) && !isLoading) {
       const userMessage = inputText.trim();
-      setMessages(prev => [...prev, { text: userMessage, isUser: true }]);
+      if (!selectedFile) {
+        setMessages(prev => [...prev, { text: userMessage, isUser: true }]);
+      }
       setInputText('');
       await handleResponse(userMessage);
     }
@@ -286,7 +187,7 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
 
     try {
       // 1. 上传文件到 Supabase Storage
-      const bucketName = 'wm';  // 确保这个 bucket 在 Supabase 中已创建
+      const bucketName = 'wm';
       const filePath = `${Date.now()}-${file.name}`;
       
       const { data: uploadData, error: uploadError } = await client
@@ -307,17 +208,17 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
         .from(bucketName)
         .getPublicUrl(filePath);
 
-      // 3. 调用 Windmill 脚本
-      const endpoint = `${process.env.NEXT_PUBLIC_WINDMILL_ASYNC}/dify/batch_generate_shorturl_api`;
+      // 3. 调用后端接口
+      const endpoint = `${process.env.NEXT_PUBLIC_API_URL}/dify/batch-generate-shorturl`;
       const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${process.env.NEXT_PUBLIC_WINDMILL}`
+          "Authorization": `Bearer ${session.access_token}`
         },
         body: JSON.stringify({
           user_input: userInput,
-          urls_file: publicUrl,  // 传递文件的公共URL
+          urls_file: publicUrl,
           token: session.access_token,
           teamId: team.id,
           projectId: project.id,
@@ -330,11 +231,22 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
         throw new Error(`API call failed: ${response.status} ${response.statusText} - ${errorText}`);
       }
 
-      return await response.text();
+      return response;
     } catch (error) {
       console.error('File upload error:', error);
       throw error;
     }
+  };
+
+  // 文件选择处理
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setSelectedFile(file);
+      // 可以在这里添加文件预览或其他处理
+    }
+    // 重置 input 的 value，这样同一个文件可以重复选择
+    e.target.value = '';
   };
 
   return (
@@ -366,7 +278,7 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
       >
         <div className="flex flex-col h-full">
           {/* 消息列表区域 */}
-          <div className="flex-1 p-4 mb-4 space-y-4 overflow-y-auto">
+          <div className="flex-1 p-4 mb-4 space-y-4 overflow-y-auto mt-[50px]">
             {messages.map((message, index) => (
               <div
                 key={index}
@@ -376,12 +288,12 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
                   onClick={() => handleMessageClick(message.action)}
                   className={`max-w-[80%] rounded-lg p-3 ${
                     message.isUser
-                      ? 'bg-indigo-600 text-white markdown-user'
-                      : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100 markdown-bot'
+                      ? 'bg-indigo-600 text-white markdown-user whitespace-pre-wrap break-words'
+                      : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100 markdown-bot whitespace-pre-wrap break-words'
                   } ${!message.isUser && message.action ? 'cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600' : ''}`}
                 >
                   {message.isUser ? (
-                    message.text
+                    <div className="break-words whitespace-pre-wrap">{message.text}</div>
                   ) : (
                     <ReactMarkdown 
                       components={{
@@ -401,6 +313,9 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
                         // 自定义粗体样式
                         strong: ({node, ...props}) => (
                           <strong {...props} className="font-bold" />
+                        ),
+                        p: ({node, ...props}) => (
+                          <p {...props} className="break-words whitespace-pre-wrap" />
                         ),
                       }}
                     >
@@ -475,7 +390,7 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
                 <input
                   type="file"
                   accept=".csv"
-                  onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
+                  onChange={handleFileSelect}
                   className="hidden"
                   id="file-upload"
                   disabled={isLoading}
