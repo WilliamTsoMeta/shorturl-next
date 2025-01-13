@@ -23,36 +23,22 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
 
   // 处理流式响应
   async function handleStreamingResponse(response: Response) {
+    console.log('开始处理流式响应');
     const reader = response.body?.getReader();
     if (!reader) {
+      console.error('No reader available for streaming response');
       throw new Error('No reader available for streaming response');
     }
 
     const decoder = new TextDecoder();
     let buffer = '';
 
-    function formatEventMessage(eventData: any) {
-      switch (eventData.event) {
-        case 'workflow_started':
-          return `开始处理任务`;
-        case 'node_started':
-          return `开始节点: ${eventData.data.title || '未命名节点'}`;
-        case 'node_completed':
-          return `完成节点: ${eventData.data.title || '未命名节点'}`;
-        case 'workflow_completed':
-          return `任务处理完成`;
-        case 'message':
-          return eventData.data.title || eventData.data.message || '处理中...';
-        case 'error':
-          return `错误: ${eventData.error}`;
-        default:
-          return eventData.data.title || '处理中...';
-      }
-    }
-
     while (true) {
       const { done, value } = await reader.read();
-      if (done) break;
+      if (done) {
+        console.log('流式响应结束');
+        break;
+      }
 
       buffer += decoder.decode(value, { stream: true });
       const lines = buffer.split('\n\n');
@@ -62,14 +48,39 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
         if (line.trim() && line.startsWith('data: ')) {
           try {
             const eventData = JSON.parse(line.slice(6));
-            const message = formatEventMessage(eventData);
+            console.log('收到事件数据', eventData);
             
-            setMessages(prev => [...prev, {
-              text: `📝 ${message}`,
-              isUser: false
-            }]);
+            // 根据事件类型处理不同的消息
+            switch (eventData.event) {
+              case 'connected':
+                console.log('连接建立');
+                setCurrentStreamingMessage(eventData.data.title || 'Connected');
+                break;
+              case 'message':
+                console.log('收到消息事件');
+                setCurrentStreamingMessage(prev => 
+                  prev + '\n' + (eventData.data.title || eventData.data.message || JSON.stringify(eventData.data))
+                );
+                break;
+              case 'completed':
+                console.log('处理完成');
+                setMessages(prev => [...prev, {
+                  text: currentStreamingMessage + '\n✅ ' + eventData.data.title,
+                  isUser: false
+                }]);
+                setCurrentStreamingMessage('');
+                break;
+              case 'error':
+                console.error('收到错误事件', eventData.error);
+                setMessages(prev => [...prev, {
+                  text: `❌ Error: ${eventData.error}`,
+                  isUser: false
+                }]);
+                setCurrentStreamingMessage('');
+                break;
+            }
           } catch (e) {
-            console.error('解析事件失败:', e);
+            console.error('解析事件数据失败:', e, '原始数据:', line);
           }
         }
       }
@@ -174,19 +185,24 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
 
   // 修改文件上传处理函数
   const triggerAsyncJobWithFile = async (userInput: string, file: File) => {
+    console.log('开始文件上传流程', { userInput, fileName: file.name });
+    
     const client = createClient();
     const { data: { session } } = await client.auth.getSession();
 
     if (!session?.access_token) {
+      console.error('No access token found');
       throw new Error('No access token found. Please login first.');
     }
 
     if (!team?.id || !project?.id) {
+      console.error('Missing team or project', { team, project });
       throw new Error('No team or project found. Please try again.');
     }
 
     try {
       // 1. 上传文件到 Supabase Storage
+      console.log('开始上传文件到 Supabase');
       const bucketName = 'wm';
       const filePath = `${Date.now()}-${file.name}`;
       
@@ -199,17 +215,28 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
         });
 
       if (uploadError) {
+        console.error('Supabase 文件上传失败', uploadError);
         throw new Error(`Failed to upload file: ${uploadError.message}`);
       }
+      console.log('Supabase 文件上传成功', uploadData);
 
       // 2. 获取文件的公共URL
       const { data: { publicUrl } } = client
         .storage
         .from(bucketName)
         .getPublicUrl(filePath);
+      console.log('获取到文件公共URL', publicUrl);
 
       // 3. 调用后端接口
       const endpoint = `${process.env.NEXT_PUBLIC_API_URL}/dify/batch-generate-shorturl`;
+      console.log('准备调用批处理接口', {
+        endpoint,
+        userInput,
+        publicUrl,
+        teamId: team.id,
+        projectId: project.id
+      });
+
       const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
@@ -228,12 +255,18 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
 
       if (!response.ok) {
         const errorText = await response.text();
+        console.error('批处理接口调用失败', {
+          status: response.status,
+          statusText: response.statusText,
+          errorText
+        });
         throw new Error(`API call failed: ${response.status} ${response.statusText} - ${errorText}`);
       }
 
+      console.log('批处理接口调用成功，开始处理流式响应');
       return response;
     } catch (error) {
-      console.error('File upload error:', error);
+      console.error('文件处理过程出错', error);
       throw error;
     }
   };
@@ -247,6 +280,40 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
     }
     // 重置 input 的 value，这样同一个文件可以重复选择
     e.target.value = '';
+  };
+
+  const handleStreamResponse = (data: string) => {
+    try {
+      const parsedData = JSON.parse(data);
+      
+      // 只处理工作流事件和有标题的节点
+      if (parsedData.event === "workflow_finished" && parsedData.data?.outputs?.output_creation) {
+        // 直接显示最终结果
+        setMessages(prev => [...prev, {
+          text: parsedData.data.outputs.output_creation,
+          isUser: false
+        }]);
+        return;
+      }
+
+      // 显示进度信息
+      if (parsedData.event === "node_started" && parsedData.data?.title) {
+        setMessages(prev => [...prev, {
+          text: `⏳ ${parsedData.data.title}`,
+          isUser: false
+        }]);
+      }
+      
+      // 显示错误信息
+      if (parsedData.error) {
+        setMessages(prev => [...prev, {
+          text: `❌ 发生错误: ${parsedData.error}`,
+          isUser: false
+        }]);
+      }
+    } catch (error) {
+      console.error('Error parsing stream data:', error);
+    }
   };
 
   return (
