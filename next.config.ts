@@ -6,6 +6,7 @@ const withNextIntl = createNextIntlPlugin();
 
 const nextConfig: NextConfig = {
   images: {
+    domains:['localhost','limqapi.upj.to'],
     remotePatterns: [
       {
         protocol: 'https',
